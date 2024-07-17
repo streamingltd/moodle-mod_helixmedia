@@ -80,7 +80,8 @@ class mobile {
             'cmid' => $cm->id,
             'courseid' => $args->courseid,
             'launchurl' => $launchurl,
-            'showdescription' => $helixmedia->showdescriptionlaunch
+            'description' => $helixmedia->showdescriptionlaunch ? $helixmedia->intro : '',
+            'canusemoduleinfo' => $args->appversioncode >= 44000,
         );
 
         if ($size->audioonly) {
