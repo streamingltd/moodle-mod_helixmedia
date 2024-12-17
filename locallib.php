@@ -153,9 +153,13 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
     $result = $curl->post($endpoint, $params);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
-        $r = $curl->get_raw_response();
-        return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
-              "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        if ($r = $curl->get_raw_response()) {
+            return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
+                "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        } else {
+            return "<p>CURL Error connecting to MEDIAL: No response</p>".
+                "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        }
     }
 
     if (file_exists($cookiesfile)) {
@@ -220,11 +224,13 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
          ($typeconfig['acceptgrades'] == LTI_SETTING_DELEGATE && $instance->instructorchoiceacceptgrades == LTI_SETTING_ALWAYS ))) {
         $requestparams['lis_result_sourcedid'] = $sourcedid;
 
+        /*
         if ($typeconfig['forcessl'] == '1') {
             $serviceurl = lti_ensure_url_is_https($serviceurl);
         }
 
         $requestparams['lis_outcome_service_url'] = $serviceurl;
+        */
     }
 
     // Send user's name and email data if appropriate.
@@ -618,4 +624,23 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
              "}\n".
              "</script>\n";
     }
+}
+
+function helixmedia_detect_assign_grading_view($url) {
+    $url = parse_url($url);
+
+    if (strpos($url['path'], '/mod/assign/') === false) {
+        return false;
+    }
+
+    $query = explode('&', $url['query']);
+
+    // These three actions equate to a tutor viewing a submission
+    if (strpos($url['query'], 'action=viewpluginassignsubmission') !== false ||
+        strpos($url['query'], 'action=grading') !== false ||
+        strpos($url['query'], 'action=grader') !== false
+    ) {
+        return true;
+    }
+    return false;
 }

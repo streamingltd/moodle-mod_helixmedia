@@ -81,3 +81,4 @@ $string['pleasewait'] = 'Media Loading - Please Wait';
 $string['pleasewaitup'] = 'Loading - Please Wait';
 $string['openlib'] = 'Open my MEDIAL library';
 $string['mylibrary'] = 'My MEDIAL Library';
+$string['privacy:metadata'] = 'The mod_helixmedia plugin does not store any personal data.';

@@ -56,6 +56,7 @@ if ($c === false) {
         foreach ($USER->currentcourseaccess as $key => $time) {
             if ($time > $lastime) {
                 $c = $key;
+                $lastime = $time;
             }
         }
     } else {
@@ -378,13 +379,24 @@ if ($type == HML_LAUNCH_NORMAL) {
     helixmedia_view($hmli, $course, $cm, $context, $user);
 }
 
+$ishtmlassign = false;
+
+// Try to detect if this is an ATTO/TINY Launch where these plugins have been used with a text area for student submissions
+if ($type == HML_LAUNCH_ATTO_EDIT || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_ATTO_VIEW || $type == HML_LAUNCH_TINYMCE_VIEW) {
+
+    // If this is a tutor, check if we are grading. If we are they are looking at a student submission.
+    if (has_capability('mod/assign:viewgrades', $context, $user)) {
+        $ishtmlassign = helixmedia_detect_assign_grading_view($_SERVER['HTTP_REFERER']);
+    }
+}
+
 //helixmedia_view_mod($hmli, $type, $mid, $ret, $user, $modtype);
-$PAGE->set_pagelayout('embedded');
+$PAGE->set_pagelayout('popup');
 $PAGE->set_url('/mod/helixmedia/view.php', array('id' => $hmli->id));
 $PAGE->set_title('');
 $PAGE->set_heading('');
 echo $OUTPUT->header();
 $output = $PAGE->get_renderer('mod_helixmedia');
-$disp = new \mod_helixmedia\output\launcher($hmli, $type, $mid, $ret, $user, $modtype, $postscript, $legacyjsresize);
+$disp = new \mod_helixmedia\output\launcher($hmli, $type, $mid, $ret, $user, $modtype, $postscript, $legacyjsresize, $ishtmlassign);
 echo $output->render($disp);
 echo $OUTPUT->footer();

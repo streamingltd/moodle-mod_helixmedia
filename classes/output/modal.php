@@ -43,6 +43,8 @@ use moodle_url;
  */
 class modal implements renderable, templatable {
 
+    private $preid, $text, $library, $viewonly, $edit, $extraid, $thumblaunchurl, $icon, $frameid, $imgurl, $jsparams;
+
     /**
      * Gets the modal dialog using the supplied params
      * @param pre_id The resource link ID

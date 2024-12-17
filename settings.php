@@ -28,7 +28,7 @@ defined('MOODLE_INTERNAL') || die;
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
 
-if ($PAGE->pagetype == "admin-setting-modsettinghelixmedia") {
+if (optional_param('section', null, PARAM_ALPHA) == 'modsettinghelixmedia') {
     require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
     $settings->add(new admin_setting_heading('helixmedia/version_check', get_string("version_check_title", "mod_helixmedia"),
         helixmedia_version_check()));

@@ -53,6 +53,8 @@ function helixmedia_supports($feature) {
             return true;
         case FEATURE_SHOW_DESCRIPTION:
             return true;
+        case FEATURE_MOD_PURPOSE:
+            return MOD_PURPOSE_CONTENT;
         default:
             return null;
     }
@@ -72,8 +74,8 @@ function helixmedia_preallocate_id() {
     $pre->id = $DB->insert_record('helixmedia_pre', $pre);
 
     // If the value here is 1 then either this is a new install or the auto_increment value has been reset
-    // due to the problem with InnoDB not storing this value persistently. Check regardless.
-    if ($pre->id == 1) {
+    // due to the problem with InnoDB (mariadb & mysqli only) not storing this value persistently. Check regardless.
+    if ($pre->id == 1 && ($CFG->dbtype == "mariadb" || $CFG->dbtype == "mysqli")) {
         $val = 1;
         // Check the activity mod.
         $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."helixmedia;";

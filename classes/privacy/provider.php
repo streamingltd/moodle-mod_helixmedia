@@ -15,20 +15,31 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file defines the version of helixmedia
+ * Privacy Subsystem implementation for format_tabtopics.
  *
- * @package    mod
- * @subpackage helixmedia
- * @copyright  2013 onwards Tim Williams (For Streaming LTD)
- * @author     Tim Williams
+ * @package    mod_helixmedia
+ * @copyright  
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die;
+namespace mod_helixmedia\privacy;
 
-$plugin->version   = 2024120901; // The current module version (Date: YYYYMMDDXX).
-$plugin->requires  = 2022112800; // Requires this Moodle version.
-$plugin->component = 'mod_helixmedia'; // Full name of the plugin (used for diagnostics).
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = '8.5.19e';
-$plugin->supported = [401, 405];
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * The format_tabtopics
+ *
+ */
+class provider implements \core_privacy\local\metadata\null_provider
+{
+    /**
+     * Get the language string identifier with the component's language
+     * file to explain why this plugin stores no data.
+     *
+     * @return string
+     */
+    public static function get_reason(): string
+    {
+        return 'privacy:metadata';
+    }
+}

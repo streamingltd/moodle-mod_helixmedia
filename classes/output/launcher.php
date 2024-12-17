@@ -38,6 +38,9 @@ use templatable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class launcher implements renderable, templatable {
+
+    private $postscript, $preid, $text, $size, $legacyjsresize, $endpoint, $debuglaunch, $params;
+
     /**
      * Constructor.
      *
@@ -46,9 +49,10 @@ class launcher implements renderable, templatable {
      * @param $ref The value for the custom_video_ref parameter
      * @param $modtype The module type, use to check if we can use the more permissive
      * @param $ret The return URL to set for the modal dialogue
+     * @param $ishtmlassign If this is an ATTO/Tiny launch from a student submission
      */
 
-    public function __construct($instance, $type, $ref, $ret, $user, $modtype, $postscript, $legacyjsresize = false) {
+    public function __construct($instance, $type, $ref, $ret, $user, $modtype, $postscript, $legacyjsresize = false, $ishtmlassign = false) {
         global $CFG, $DB;
 
         $this->postscript = $postscript;
@@ -155,6 +159,10 @@ class launcher implements renderable, templatable {
         }
         if ($ref > -1) {
             $typeconfig['customparameters'] .= "\nvideo_ref=".$ref;
+        }
+
+        if ($ishtmlassign) {
+            $typeconfig['customparameters'] .= "\nmoodlehtmlassign=Y";
         }
 
         $typeconfig['customparameters'] .= "\nlaunch_type=".$type;

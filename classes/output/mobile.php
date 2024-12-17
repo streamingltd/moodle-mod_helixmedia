@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->libdir.'/externallib.php'); 
 
 use context_module;
 use mod_helixmedia_external;
@@ -80,7 +81,8 @@ class mobile {
             'cmid' => $cm->id,
             'courseid' => $args->courseid,
             'launchurl' => $launchurl,
-            'showdescription' => $helixmedia->showdescriptionlaunch
+            'description' => $helixmedia->showdescriptionlaunch ? $helixmedia->intro : '',
+            'canusemoduleinfo' => $args->appversioncode >= 44000,
         );
 
         if ($size->audioonly) {
