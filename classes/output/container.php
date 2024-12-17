@@ -42,6 +42,8 @@ use templatable;
  */
 class container implements renderable, templatable {
 
+    private $param, $width, $height, $course;
+
     /**
      * Constructor.
      */

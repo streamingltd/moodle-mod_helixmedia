@@ -39,6 +39,8 @@ use templatable;
  */
 class view implements renderable, templatable {
 
+    private $launchurl, $audioonly;
+
     /**
      * Constructor.
      */

@@ -36,15 +36,8 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         global $add, $CFG, $update, $DB, $PAGE;
         $mform =& $this->_form;
 
-        if ($add) {
-            $preid = helixmedia_preallocate_id();
-        } else {
-            $preid = helixmedia_get_preid($update);
-        }
-
         $mform->addElement('hidden', 'preid');
         $mform->setType('preid', PARAM_INT);
-        $mform->setDefault('preid', $preid);
 
         $mform->addElement('text', 'name', get_string("helixmediatext", "helixmedia"), 'size="47"');
         if (!empty($CFG->formatstringstriptags)) {
@@ -77,24 +70,38 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         $mform->addElement('checkbox', 'showdescriptionlaunch', '&nbsp;', ' ' . get_string('display_description', 'lti'));
         $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
-        $output = $PAGE->get_renderer('mod_helixmedia');
-
-        if ($add) {
-            $disp = new \mod_helixmedia\output\modal($preid,
-                array('type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid),
-                array('type' => HML_LAUNCH_EDIT, 'l' => $preid), true);
-        } else {
-            $disp = new \mod_helixmedia\output\modal($preid,
-                array('type' => HML_LAUNCH_THUMBNAILS, 'id' => $update),
-                array('type' => HML_LAUNCH_EDIT, 'id' => $update), true);
-        }
-
-        $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), $output->render($disp));
-
+        $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), '');
         $features = array('groups' => false, 'groupings' => false, 'groupmembersonly ' => true,
                           'outcomes' => false, 'gradecat' => false, 'idnumber' => false);
         $this->standard_coursemodule_elements($features);
         $this->add_action_buttons();
+    }
+
+    function definition_after_data() {
+        global $PAGE, $add, $update;
+        $mform =& $this->_form;
+        $pr =& $mform->getElement('preid');
+        $ch =& $mform->getElement('choosemedia');
+        $output = $PAGE->get_renderer('mod_helixmedia');
+        if ($add) {
+            $preid = helixmedia_preallocate_id();
+            $pr->setValue($preid);
+            $disp = new \mod_helixmedia\output\modal($preid,
+                array('type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid),
+                array('type' => HML_LAUNCH_EDIT, 'l' => $preid), true);
+            $ch->setValue($output->render($disp));
+            return;
+        }
+
+        if ($update) {
+            $preid = helixmedia_get_preid($update);
+            $pr->setValue($preid);
+            $disp = new \mod_helixmedia\output\modal($preid,
+                array('type' => HML_LAUNCH_THUMBNAILS, 'id' => $update),
+                array('type' => HML_LAUNCH_EDIT, 'id' => $update), true);
+            $ch->setValue($output->render($disp));
+            return;
+        }
     }
 
 }

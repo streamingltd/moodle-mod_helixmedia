@@ -26,14 +26,6 @@ namespace mod_helixmedia\search;
 
 defined('MOODLE_INTERNAL') || die();
 
-if (class_exists('\core_search\base_activity')) {
-    class activity_wrapper extends \core_search\base_activity {
-    }
-} else {
-    class activity_wrapper extends \core_search\area\base_activity {
-    }
-}
-
 /**
  * Search area for mod_page activities.
  *
@@ -41,7 +33,7 @@ if (class_exists('\core_search\base_activity')) {
  * @copyright  2015 David Monllao {@link http://www.davidmonllao.com} and 2016 Tim Williams for Streaing LTD (copied from mod_page)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class activity extends activity_wrapper {
+class activity extends \core_search\base_activity {
 
     /**
      * Returns the document associated with this activity.
