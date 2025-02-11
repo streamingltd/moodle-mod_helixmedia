@@ -17,10 +17,11 @@
 /**
  * This file contains a library of functions and constants for the helixmedia module
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams (For Streaming LTD)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die;

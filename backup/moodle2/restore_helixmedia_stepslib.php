@@ -18,10 +18,11 @@
  * This file contains all the restore steps that will be used
  * by the restore_helixmedia_activity_task
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams for Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die;
@@ -33,15 +34,23 @@ require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
  */
 class restore_helixmedia_activity_structure_step extends restore_activity_structure_step {
 
+    /**
+     * Define the backup structure
+     * @return restore_path_element
+     */
     protected function define_structure() {
 
-        $paths = array();
+        $paths = [];
         $paths[] = new restore_path_element('helixmedia', '/activity/helixmedia');
 
         // Return the paths wrapped into standard activity structure.
         return $this->prepare_activity_structure($paths);
     }
 
+    /**
+     * Process a backup element
+     * @param array $data The backup element
+     */
     protected function process_helixmedia($data) {
         global $DB;
 
@@ -59,15 +68,18 @@ class restore_helixmedia_activity_structure_step extends restore_activity_struct
 
         $nextpreid = helixmedia_preallocate_id();
         while ($nextpreid < $data->preid) {
-            $DB->delete_records('helixmedia_pre', array('id' => $nextpreid));
+            $DB->delete_records('helixmedia_pre', ['id' => $nextpreid]);
             $nextpreid = helixmedia_preallocate_id();
         }
-        $DB->delete_records('helixmedia_pre', array('id' => $nextpreid));
+        $DB->delete_records('helixmedia_pre', ['id' => $nextpreid]);
 
         // Immediately after inserting "activity" record, call this.
         $this->apply_activity_instance($newitemid);
     }
 
+    /**
+     * Code executed after backup
+     */
     protected function after_execute() {
         // Add helixmedia related files, no need to match by itemname (just internally handled context).
         $this->add_related_files('mod_helixmedia', 'intro', null);

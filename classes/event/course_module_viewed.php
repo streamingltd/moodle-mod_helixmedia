@@ -23,7 +23,6 @@
  */
 
 namespace mod_helixmedia\event;
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * The mod_helixmedia course module viewed event class.

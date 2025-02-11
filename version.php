@@ -17,7 +17,7 @@
 /**
  * This file defines the version of helixmedia
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @copyright  2013 onwards Tim Williams (For Streaming LTD)
  * @author     Tim Williams
@@ -26,9 +26,9 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin->version   = 2024120901; // The current module version (Date: YYYYMMDDXX).
+$plugin->version   = 2024120903; // The current module version (Date: YYYYMMDDXX).
 $plugin->requires  = 2022112800; // Requires this Moodle version.
 $plugin->component = 'mod_helixmedia'; // Full name of the plugin (used for diagnostics).
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '8.5.19e';
+$plugin->release = '8.5.19f';
 $plugin->supported = [401, 405];

@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace mod_helixmedia\output;
 defined('MOODLE_INTERNAL') || die();
 
@@ -42,12 +41,46 @@ use templatable;
  */
 class container implements renderable, templatable {
 
-    private $param, $width, $height, $course;
+    /**
+     * @var $param
+     */
+    private $param;
 
     /**
-     * Constructor.
+     * @var $width Width in pixels
      */
-    public function __construct($course, $id, $aid, $l, $w, $h, $ret, $nassign, $eassign, 
+    private $width;
+
+    /**
+     * @var $height Height in pixels
+     */
+    private $height;
+
+    /**
+     * @var $course The course
+     */
+    private $course;
+
+    /**
+     * Class constructor.
+     * @param int $course The course
+     * @param int $id The MEDIAL id
+     * @param int $aid The assignment ID
+     * @param int $l resource link id
+     * @param int $w Container width
+     * @param int $h Container height
+     * @param int $ret ret value
+     * @param int $nassign New assignment
+     * @param int $eassign Existing assignment
+     * @param int $nfeed New feedback
+     * @param int $efeed Existing feedback
+     * @param int $userid The user id
+     * @param int $type MEDIAL Launch type
+     * @param string $name The resource name
+     * @param string $intro The resource intro text
+     * @param string $modtype Resource mod type
+     */
+    public function __construct($course, $id, $aid, $l, $w, $h, $ret, $nassign, $eassign,
         $nfeed, $efeed, $userid, $type, $name, $intro, $modtype) {
 
         if ($l > 0) {
@@ -98,16 +131,21 @@ class container implements renderable, templatable {
         $this->course = $course;
     }
 
+    /**
+     * Exports the data for rendering
+     * @param renderer_base $output renderer
+     * @return array
+     */
     public function export_for_template(renderer_base $output) {
         global $CFG;
 
         $data = [
-            'wwwroot' =>$CFG->wwwroot,
+            'wwwroot' => $CFG->wwwroot,
             'launchurl' => get_config("helixmedia", "launchurl"),
             'width' => $this->width,
             'height' => $this->height,
             'course' => $this->course,
-            'param' => $this->param
+            'param' => $this->param,
         ];
         return $data;
     }

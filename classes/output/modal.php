@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace mod_helixmedia\output;
 defined('MOODLE_INTERNAL') || die();
 
@@ -43,20 +42,73 @@ use moodle_url;
  */
 class modal implements renderable, templatable {
 
-    private $preid, $text, $library, $viewonly, $edit, $extraid, $thumblaunchurl, $icon, $frameid, $imgurl, $jsparams;
+    /**
+     * @var The resource link ID.
+     */
+    private $preid;
+
+    /**
+     * @var Text to display while loading
+     */
+    private $text;
+
+    /**
+     * @var Is this a library launch?
+     */
+    private $library;
+
+    /**
+     * @var Are we only viewing the resource?
+     */
+    private $viewonly;
+
+    /**
+     * @var Is this launch for editing/setting the video.
+     */
+    private $edit;
+
+    /**
+     * @var An extra ID we may need at the MEDIAL end.
+     */
+    private $extraid;
+
+    /**
+     * @var Are we showing a thumbnail?
+     */
+    private $thumblaunchurl;
+
+    /**
+     * @var The icon to display in the button.
+     */
+    private $icon;
+
+    /**
+     * @var The ID to associate with the iframe.
+     */
+    private $frameid;
+
+    /**
+     * @var true if we are showing an image button
+     */
+    private $imgurl;
+
+    /**
+     * @var Javascript paramters we need for the launch
+     */
+    private $jsparams;
 
     /**
      * Gets the modal dialog using the supplied params
-     * @param pre_id The resource link ID
-     * @param paramsthumb The get request parameters for the thumbnail as an array
-     * @param paramslink The get request parameters for the modal link as an array
-     * @param image True if we want to use the graphical button
-     * @param text The text to use for the button and frame title
-     * @param c The course ID, or -1 if not known
-     * @param statusCheck true if the statusCheck method should be used
-     * @param flex Flex type for display. REDUNDANT
-     * @param extraid An extra ID item to append on the div id
-     * @return The HTML for the dialog
+     * @param int $preid Resource link id
+     * @param int $paramsthumb The get request parameters for the thumbnail as an array
+     * @param string $paramslink The get request parameters for the modal link as an array
+     * @param string $image True if we want to use the graphical button
+     * @param string $text The text to use for the button and frame title
+     * @param int $c The course ID, or -1 if not known
+     * @param bool $statuscheck true if the statusCheck method should be used
+     * @param bool $flextype Flex type for display. REDUNDANT
+     * @param bool $extraid An extra ID item to append on the div id
+     * @param bool $library true if this is a libary view request
      **/
     public function __construct($preid, $paramsthumb, $paramslink, $image,
         $text = false, $c = false, $statuscheck = true, $flextype = 'row', $extraid = false, $library = false) {
@@ -73,7 +125,8 @@ class modal implements renderable, templatable {
         } else {
             $this->library = false;
         }
-        // We need to allow extra space in the dialog if we are in editing mode. statuscheck will be set to true when we are editing.
+        // We need to allow extra space in the dialog if we are in editing mode.
+        // Statuscheck will be set to true when we are editing.
         if (!$statuscheck) {
             $this->viewonly = true;
             $this->edit = false;
@@ -88,7 +141,7 @@ class modal implements renderable, templatable {
             $this->extraid = '';
         }
         if ($c !== false) {
-            $course = $DB->get_record("course", array("id" => $c));
+            $course = $DB->get_record("course", ["id" => $c]);
         } else {
             $course = $COURSE;
         }
@@ -96,7 +149,7 @@ class modal implements renderable, templatable {
         $paramsthumb['course'] = $course->id;
         $paramslink['course'] = $course->id;
         $paramslink['ret'] = base64_encode(curpageurl());
-        // Turn off the legacy resize, not needed for this type of embed
+        // Turn off the legacy resize, not needed for this type of embed.
         $paramslink['responsive'] = 1;
 
         $this->thumblaunchurl = new moodle_url('/mod/helixmedia/launch.php', $paramsthumb);
@@ -121,7 +174,7 @@ class modal implements renderable, templatable {
         }
 
         $modconfig = get_config("helixmedia");
-        $this->jsparams = array(
+        $this->jsparams = [
             $this->frameid,
             $launchurl,
             $this->thumblaunchurl,
@@ -135,10 +188,13 @@ class modal implements renderable, templatable {
             intval($modconfig->modal_delay),
             $this->extraid,
             $this->text,
-            $this->library
-        );
+            $this->library,
+        ];
     }
 
+    /**
+     * Includes javascript modules on the page.
+     */
     public function inc_js() {
         global $PAGE;
         if ($this->viewonly || $this->library) {
@@ -148,7 +204,11 @@ class modal implements renderable, templatable {
         }
     }
 
-
+    /**
+     * Exports data for rendering
+     * @param renderer_base $output The renderer
+     * @return array
+     */
     public function export_for_template(renderer_base $output) {
         global $CFG, $PAGE;
 

@@ -17,10 +17,11 @@
 /**
  * This file contains helixmedia external webservices
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams (For Streaming LTD)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die;

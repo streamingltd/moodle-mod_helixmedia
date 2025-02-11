@@ -38,7 +38,6 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
  * @author     Tim Williams tim@medial.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class lti_compat_launch extends lti_launch {
 
     /**
@@ -47,7 +46,7 @@ class lti_compat_launch extends lti_launch {
      * @return array|null
      */
     protected function get_legacy_logdata() {
-        return array($this->courseid, $this->objecttable, 'launch', 'launch.php?id=' . $this->contextinstanceid .'&type=' .
-            HML_LAUNCH_NORMAL, $this->objectid, $this->contextinstanceid);
+        return [$this->courseid, $this->objecttable, 'launch', 'launch.php?id=' . $this->contextinstanceid .'&type=' .
+            HML_LAUNCH_NORMAL, $this->objectid, $this->contextinstanceid];
     }
 }

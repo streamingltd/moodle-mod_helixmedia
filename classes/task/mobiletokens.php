@@ -17,7 +17,7 @@
 /**
  * This file defines the version of helixmedia
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @copyright  2013 Tim Williams (For Streaming LTD)
  * @author     Tim Williams
@@ -29,9 +29,6 @@ namespace mod_helixmedia\task;
 /**
  * Cleanup task for HelixMedia;
  */
-
-
-
 class mobiletokens extends \core\task\scheduled_task {
 
     /**

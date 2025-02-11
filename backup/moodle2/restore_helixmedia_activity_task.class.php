@@ -17,10 +17,11 @@
 /**
  * This file contains the helixmedia module restore class
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams for Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -52,10 +53,10 @@ class restore_helixmedia_activity_task extends restore_activity_task {
      * Define the contents in the activity that must be
      * processed by the link decoder
      */
-    static public function define_decode_contents() {
-        $contents = array();
+    public static function define_decode_contents() {
+        $contents = [];
 
-        $contents[] = new restore_decode_content('helixmedia', array('intro'), 'helixmedia');
+        $contents[] = new restore_decode_content('helixmedia', ['intro'], 'helixmedia');
 
         return $contents;
     }
@@ -64,8 +65,8 @@ class restore_helixmedia_activity_task extends restore_activity_task {
      * Define the decoding rules for links belonging
      * to the activity to be executed by the link decoder
      */
-    static public function define_decode_rules() {
-        $rules = array();
+    public static function define_decode_rules() {
+        $rules = [];
 
         $rules[] = new restore_decode_rule('HELIXMEDIAVIEWBYID', '/mod/helixmedia/view.php?id=$1', 'course_module');
         $rules[] = new restore_decode_rule('HELIXMEDIAINDEX', '/mod/helixmedia/index.php?id=$1', 'course');
@@ -76,12 +77,12 @@ class restore_helixmedia_activity_task extends restore_activity_task {
 
     /**
      * Define the restore log rules that will be applied
-     * by the {@link restore_logs_processor} when restoring
+     * by the restore_logs_processor when restoring
      * helixmedia logs. It must return one array
-     * of {@link restore_log_rule} objects
+     * of restore_log_rule objects
      */
-    static public function define_restore_log_rules() {
-        $rules = array();
+    public static function define_restore_log_rules() {
+        $rules = [];
 
         $rules[] = new restore_log_rule('helixmedia', 'add', 'view.php?id={course_module}', '{helixmedia}');
         $rules[] = new restore_log_rule('helixmedia', 'update', 'view.php?id={course_module}', '{helixmedia}');
@@ -92,16 +93,16 @@ class restore_helixmedia_activity_task extends restore_activity_task {
 
     /**
      * Define the restore log rules that will be applied
-     * by the {@link restore_logs_processor} when restoring
+     * by the restore_logs_processor when restoring
      * course logs. It must return one array
-     * of {@link restore_log_rule} objects
+     * of restore_log_rule objects
      *
      * Note this rules are applied when restoring course logs
      * by the restore final task, but are defined here at
      * activity level. All them are rules not linked to any module instance (cmid = 0)
      */
-    static public function define_restore_log_rules_for_course() {
-        $rules = array();
+    public static function define_restore_log_rules_for_course() {
+        $rules = [];
 
         $rules[] = new restore_log_rule('helixmedia', 'view all', 'index.php?id={course}', null);
 

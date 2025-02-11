@@ -14,17 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-require_once("../../config.php");
-require_login();
-
 /**
  * This page acts as a container for the launch code
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams for Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
+
+require_once("../../config.php");
+require_login();
 
 $course = optional_param('course', -1, PARAM_INT);
 $id = optional_param('id', 0, PARAM_INT);
@@ -50,6 +51,6 @@ if ($course > 0) {
 }
 
 $output = $PAGE->get_renderer('mod_helixmedia');
-$disp = new \mod_helixmedia\output\container($course, $id, $aid, $l, $w, $h, $ret, $nassign, $eassign, 
+$disp = new \mod_helixmedia\output\container($course, $id, $aid, $l, $w, $h, $ret, $nassign, $eassign,
     $nfeed, $efeed, $userid, $type, $name, $intro, $modtype);
 echo $output->render($disp);

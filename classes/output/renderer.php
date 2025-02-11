@@ -14,17 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace mod_helixmedia\output;
-defined('MOODLE_INTERNAL') || die();
-
-/**
- * Block filter course search renderer.
- *
- * @package    mod_helixmedia
- * @copyright  2021 Tim Williams <tmw@autotrain.org>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 
 use plugin_renderer_base;
 use renderable;
@@ -88,21 +78,19 @@ class renderer extends plugin_renderer_base {
     }
 
     /**
-    * Render launch code 
-    * @param renderable $fd
-    * @return string
-    */
-
+     * Render launch code
+     * @param renderable $fd
+     * @return string
+     */
     public function render_launcher(renderable $fd) {
         return $this->render_from_template('mod_helixmedia/launcher', $fd->export_for_template($this));
     }
 
     /**
-    * Render launch message
-    * @param renderable $fd
-    * @return string
-    */
-
+     * Render launch message
+     * @param renderable $fd
+     * @return string
+     */
     public function render_launchmessage(renderable $fd) {
         return $this->render_from_template('mod_helixmedia/launchmessage', $fd->export_for_template($this));
     }

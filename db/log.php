@@ -26,10 +26,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$logs = array(
-    array('module' => 'helixmedia', 'action' => 'view', 'mtable' => 'helixmedia', 'field' => 'name'),
-    array('module' => 'helixmedia', 'action' => 'launch', 'mtable' => 'helixmedia', 'field' => 'name'),
-    array('module' => 'helixmedia', 'action' => 'editlaunch', 'mtable' => 'helixmedia', 'field' => 'name'),
-    array('module' => 'helixmedia', 'action' => 'editlaunchnew', 'mtable' => 'helixmedia', 'field' => 'name'),
-    array('module' => 'helixmedia', 'action' => 'view all', 'mtable' => 'helixmedia', 'field' => 'name')
-);
+$logs = [
+    ['module' => 'helixmedia', 'action' => 'view', 'mtable' => 'helixmedia', 'field' => 'name'],
+    ['module' => 'helixmedia', 'action' => 'launch', 'mtable' => 'helixmedia', 'field' => 'name'],
+    ['module' => 'helixmedia', 'action' => 'editlaunch', 'mtable' => 'helixmedia', 'field' => 'name'],
+    ['module' => 'helixmedia', 'action' => 'editlaunchnew', 'mtable' => 'helixmedia', 'field' => 'name'],
+    ['module' => 'helixmedia', 'action' => 'view all', 'mtable' => 'helixmedia', 'field' => 'name'],
+];

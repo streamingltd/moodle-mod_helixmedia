@@ -38,7 +38,6 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
  * @author     Tim Williams tim@medial.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class lti_launch_compat_edit extends lti_launch_edit {
 
     /**
@@ -47,9 +46,7 @@ class lti_launch_compat_edit extends lti_launch_edit {
      * @return array|null
      */
     protected function get_legacy_logdata() {
-        return array($this->courseid, $this->objecttable, 'editlaunch', 'launch.php?id=' . $this->contextinstanceid .
-            '&type=' . HML_LAUNCH_EDIT, $this->objectid, $this->contextinstanceid);
+        return [$this->courseid, $this->objecttable, 'editlaunch', 'launch.php?id=' . $this->contextinstanceid .
+            '&type=' . HML_LAUNCH_EDIT, $this->objectid, $this->contextinstanceid];
     }
-
- 
 }

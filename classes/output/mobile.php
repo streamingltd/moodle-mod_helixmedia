@@ -17,10 +17,11 @@
 /**
  * This file contains helixmedia mobile code
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams (For Streaming LTD)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 namespace mod_helixmedia\output;
@@ -29,11 +30,14 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
-require_once($CFG->libdir.'/externallib.php'); 
+require_once($CFG->libdir.'/externallib.php');
 
 use context_module;
 use mod_helixmedia_external;
 
+/**
+ * Handles requests from MoodleMobile
+ */
 class mobile {
 
     /**
@@ -57,16 +61,16 @@ class mobile {
         if ($args->userid != $USER->id) {
             require_capability('mod/helixmedia:manage', $context);
         }
-        $helixmedia = $DB->get_record('helixmedia', array('id' => $cm->instance));
+        $helixmedia = $DB->get_record('helixmedia', ['id' => $cm->instance]);
         $size = helixmedia_get_instance_size($helixmedia->preid, $args->courseid);
 
         $token = self::random_code(40);
-        $tokenid = $DB->insert_record("helixmedia_mobile", array(
+        $tokenid = $DB->insert_record("helixmedia_mobile", [
             'instance' => $cm->id,
             'userid' => $USER->id,
             'course' => $args->courseid,
             'token' => $token,
-            'timecreated' => time())
+            'timecreated' => time(), ]
         );
 
         $launchurl = $CFG->wwwroot."/mod/helixmedia/launch.php?type=".HML_LAUNCH_NORMAL."&id=".$cm->id.
@@ -76,14 +80,14 @@ class mobile {
         list($helixmedia->intro, $helixmedia->introformat) =
             external_format_text($helixmedia->intro, $helixmedia->introformat, $context->id, 'mod_helixmedia', 'intro');
 
-        $data = array(
+        $data = [
             'helixmedia' => $helixmedia,
             'cmid' => $cm->id,
             'courseid' => $args->courseid,
             'launchurl' => $launchurl,
             'description' => $helixmedia->showdescriptionlaunch ? $helixmedia->intro : '',
             'canusemoduleinfo' => $args->appversioncode >= 44000,
-        );
+        ];
 
         if ($size->audioonly) {
             $data['height'] = '100';
@@ -104,6 +108,11 @@ class mobile {
         ];
     }
 
+    /**
+     * Generates a random code
+     * @param int $length The number of chars to return
+     * @return A string
+     */
     private static function random_code($length) {
         $chars = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         $clen   = strlen($chars) - 1;

@@ -14,17 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace mod_helixmedia\output;
-defined('MOODLE_INTERNAL') || die();
-
-/**
- * Search form renderable.
- *
- * @package    mod_helixmedia
- * @copyright  2021 Tim Williams <tmw@autotrain.org>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 
 use renderable;
 use renderer_base;

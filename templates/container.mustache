@@ -1,3 +1,28 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_helixmedia/container
+
+    Contaniner for iframe launches
+
+    Example context (json):
+    {"launchurl": "-MEDIALURL-", "width": "1000", "height": "600", "course": "2",
+    "param": "&amp;name=x", "medialurl": "https://medial.com/", "wwwroot": "https://moodle.org"}
+}}
 <!DOCTYPE html>
 <html  dir="ltr" lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head><title>HML Container</title>
@@ -5,6 +30,6 @@
 <body>
 <iframe style="margin-left:7px;margin-top:25px;border:0px;background:#ffffff;" width="{{width}}" height="{{height}}" 
    src="{{wwwroot}}/mod/helixmedia/launch.php?course={{course}}&amp;{{{param}}}"
-   allow="microphone {{launchurl}}; camera {{launchurl}} display-capture {{medialurl}};"></iframe>
+   allow="fullscreen; microphone {{launchurl}}; camera {{launchurl}} display-capture {{medialurl}};"></iframe>
 </body>
 </html>

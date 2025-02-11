@@ -17,10 +17,11 @@
 /**
  * This file keeps track of upgrades to the helixmedia module
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams for Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die;
@@ -65,6 +66,7 @@ function xmldb_helixmedia_upgrade($oldversion) {
         unset_config("helixmedia_sendname");
         unset_config("helixmedia_sendemailaddr");
         unset_config("helixmedia_custom_params");
+        upgrade_mod_savepoint(true, 2014081101, 'helixmedia');
     }
 
     if ($oldversion < 2020021101) {
@@ -80,7 +82,7 @@ function xmldb_helixmedia_upgrade($oldversion) {
         $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
 
         // Adding keys to table helixmedia_mobile.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
 
         // Conditionally launch create table for helixmedia_mobile.
         if (!$dbman->table_exists($table)) {
@@ -103,7 +105,6 @@ function xmldb_helixmedia_upgrade($oldversion) {
         // Helixmedia savepoint reached.
         upgrade_mod_savepoint(true, 2023122001, 'helixmedia');
     }
-
 
     try {
         echo helixmedia_version_check();

@@ -24,7 +24,6 @@
  */
 
 namespace mod_helixmedia\event;
-defined('MOODLE_INTERNAL') || die();
 
 /**
  * LTI new edit Launch Event with legacy log compatibility
@@ -37,7 +36,6 @@ defined('MOODLE_INTERNAL') || die();
  * @author     Tim Williams tim@medial.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 class lti_launch_edit_compat_new extends lti_launch_edit_new {
     /**
      * Return the legacy event log data.
@@ -45,7 +43,7 @@ class lti_launch_edit_compat_new extends lti_launch_edit_new {
      * @return array|null
      */
     protected function get_legacy_logdata() {
-        return array($this->courseid, $this->objecttable, 'editlaunchnew', '', $this->objectid,
-                     $this->contextinstanceid);
+        return [$this->courseid, $this->objecttable, 'editlaunchnew', '', $this->objectid,
+                     $this->contextinstanceid];
     }
 }

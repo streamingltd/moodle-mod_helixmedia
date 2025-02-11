@@ -17,10 +17,11 @@
 /**
  * This page contains the global config for the HML activity
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams for Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die;
@@ -48,7 +49,7 @@ $settings->add(new admin_setting_configpasswordunmask('helixmedia/shared_secret'
 $settings->add(new admin_setting_configtext('helixmedia/org_id', get_string("org_id", "helixmedia"),
                    get_string("org_id2", "helixmedia"), "", PARAM_TEXT));
 
-$launchoptions = array();
+$launchoptions = [];
 $launchoptions[LTI_LAUNCH_CONTAINER_EMBED] = get_string('embed', 'lti');
 $launchoptions[LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS] = get_string('embed_no_blocks', 'lti');
 $launchoptions[LTI_LAUNCH_CONTAINER_WINDOW] = get_string('new_window', 'lti');
@@ -57,7 +58,7 @@ $launchoptions[LTI_LAUNCH_CONTAINER_WINDOW] = get_string('new_window', 'lti');
 $settings->add(new admin_setting_configselect('helixmedia/default_launch', get_string('default_launch_container', 'lti'),
                    "", LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS, $launchoptions));
 
-$options = array();
+$options = [];
 $options[0] = get_string('never', 'lti');
 $options[1] = get_string('always', 'lti');
 

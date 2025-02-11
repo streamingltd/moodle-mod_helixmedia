@@ -14,17 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace mod_helixmedia\output;
-defined('MOODLE_INTERNAL') || die();
-
-/**
- * Launch activity
- *
- * @package    mod_helixmedia
- * @copyright  2021 Tim Williams <tmw@autotrain.org>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 
 use renderable;
 use renderer_base;
@@ -39,20 +29,63 @@ use templatable;
  */
 class launcher implements renderable, templatable {
 
-    private $postscript, $preid, $text, $size, $legacyjsresize, $endpoint, $debuglaunch, $params;
+    /**
+     * @var true if we need to include the script that triggers after page load
+     *      to post a message back to the parent frame with the resource link id.
+     */
+    private $postscript;
+
+    /**
+     * @var The Resource Link ID
+     */
+    private $preid;
+
+    /**
+     * @var Text to display while loading
+     */
+    private $text;
+
+    /**
+     * @var Loading icon spinner size.
+     */
+    private $size;
+
+    /**
+     * @var Use the legacy resize method - for backwards compatibility with old embeds
+     */
+    private $legacyjsresize;
+
+    /**
+     * @var The launch URL to use
+     */
+    private $endpoint;
+
+    /**
+     * @var Should we force debugging on.
+     */
+    private $debuglaunch;
+
+    /**
+     * @var Contains the signed LTI parameters
+     */
+    private $params;
 
     /**
      * Constructor.
      *
-     * @param $instance The helixmedia instance.
-     * @param $type The Helix Launch Type
-     * @param $ref The value for the custom_video_ref parameter
-     * @param $modtype The module type, use to check if we can use the more permissive
-     * @param $ret The return URL to set for the modal dialogue
-     * @param $ishtmlassign If this is an ATTO/Tiny launch from a student submission
+     * @param object $instance The helixmedia instance.
+     * @param int $type The Helix Launch Type
+     * @param int $ref The value for the custom_video_ref parameter
+     * @param string $ret The return URL to set for the modal dialogue
+     * @param object $user The user
+     * @param string $modtype The module type, use to check if we can use the more permissive
+     * @param bool $postscript true if we need to include the script that triggers after page load to post a message
+     *                    back to the parent frame with the resource link id.
+     * @param bool $legacyjsresize Use the legacy resize method - for backwards compatibility with old embeds
+     * @param bool $ishtmlassign If this is an ATTO/Tiny launch from a student submission
      */
-
-    public function __construct($instance, $type, $ref, $ret, $user, $modtype, $postscript, $legacyjsresize = false, $ishtmlassign = false) {
+    public function __construct($instance, $type, $ref, $ret, $user, $modtype, $postscript, $legacyjsresize = false,
+        $ishtmlassign = false) {
         global $CFG, $DB;
 
         $this->postscript = $postscript;
@@ -73,8 +106,8 @@ class launcher implements renderable, templatable {
         // old version number to trigger the fix for this problem. The check doesn't need to be exhaustive.
         // Either the whole lot will match, or none will.
         if ($type == HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS || $type == HML_LAUNCH_VIEW_SUBMISSIONS) {
-            $ass = $DB->get_record("course_modules", array("id" => $instance->cmid));
-            $recs = $DB->get_records("assignsubmission_helixassign", array("assignment" => $ass->instance));
+            $ass = $DB->get_record("course_modules", ["id" => $instance->cmid]);
+            $recs = $DB->get_records("assignsubmission_helixassign", ["assignment" => $ass->instance]);
             $num = -1;
             foreach ($recs as $rec) {
                 if ($num == -1) {
@@ -100,7 +133,7 @@ class launcher implements renderable, templatable {
             case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
             case HML_LAUNCH_FEEDBACK_THUMBNAILS:
             case HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS:
-                // For MEDIAL 8.0.07 and higher we can use a responsive thumbnail
+                // For MEDIAL 8.0.07 and higher we can use a responsive thumbnail.
 
                 if ($modconfig->medialversion >= 80007) {
                     $typeconfig['customparameters'] .= "\nthumbnail=Y\nthumbnail_width=-1\nthumbnail_height=-1";
@@ -129,7 +162,7 @@ class launcher implements renderable, templatable {
                 $typeconfig['customparameters'] .= "\nplay_only=Y";
                 break;
             case HML_LAUNCH_STUDENT_SUBMIT:
-                $typeconfig['customparameters'] .= "\nlink_response=Y\nlink_type=Assignment\nplay_only=Y";
+                $typeconfig['customparameters'] .= "\nlink_response=Y\nlink_type=Assignment";
                 $typeconfig['customparameters'] .= "\nassignment_ref=".$instance->cmid;
                 $typeconfig['customparameters'] .= "\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
                 $typeconfig['customparameters'] .= "\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
@@ -138,7 +171,7 @@ class launcher implements renderable, templatable {
             case HML_LAUNCH_STUDENT_SUBMIT_PREVIEW:
                 $typeconfig['customparameters'] .= "\nlink_type=Assignment";
                 $typeconfig['customparameters'] .= "\nassignment_ref=".$instance->cmid."\n";
-                /**Note play_only is redundant in HML 3.1.007 onwards and will be ignored**/
+                // Note play_only is redundant in HML 3.1.007 onwards and will be ignored.
                 $typeconfig['customparameters'] .= "\nplay_only=Y\nno_horiz_borders=Y";
                 $typeconfig['customparameters'] .= "\ntemp_assignment_ref=".helixmedia_get_assign_into_refs($instance->cmid)."\n";
                 $typeconfig['customparameters'] .= "\ngroup_assignment=".helixmedia_is_group_assign($instance->cmid);
@@ -183,7 +216,7 @@ class launcher implements renderable, templatable {
 
         $orgid = $typeconfig['organizationid'];
 
-        $course = $DB->get_record("course", array("id" => $instance->course));
+        $course = $DB->get_record("course", ["id" => $instance->course]);
         $requestparams = helixmedia_build_request($instance, $typeconfig, $course, $type, $user, $modtype);
         $launchcontainer = lti_get_launch_container($instance, $typeconfig);
 
@@ -191,7 +224,8 @@ class launcher implements renderable, templatable {
             $requestparams["tool_consumer_instance_guid"] = $orgid;
         }
 
-        $this->params = lti_sign_parameters($requestparams, $this->endpoint, "POST", $modconfig->consumer_key, $modconfig->shared_secret);
+        $this->params = lti_sign_parameters($requestparams, $this->endpoint, "POST", $modconfig->consumer_key,
+            $modconfig->shared_secret);
 
         if (isset($instance->debuglaunch)) {
             $this->debuglaunch = ( $instance->debuglaunch == 1 );
@@ -206,7 +240,11 @@ class launcher implements renderable, templatable {
         }
     }
 
-
+    /**
+     * Exports data for rendering
+     * @param renderer_base $output The renderer
+     * @return array
+     */
     public function export_for_template(renderer_base $output) {
         $data = [
             'launchcode' => lti_post_launch_html($this->params, $this->endpoint, $this->debuglaunch),
@@ -215,7 +253,7 @@ class launcher implements renderable, templatable {
             'pleasewait' => !$this->debuglaunch,
             'text' => $this->text,
             'size' => $this->size,
-            'legacyjsresize' => $this->legacyjsresize
+            'legacyjsresize' => $this->legacyjsresize,
         ];
         return $data;
     }

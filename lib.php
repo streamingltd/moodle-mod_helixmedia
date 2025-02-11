@@ -17,11 +17,11 @@
 /**
  * This file contains a library of functions and constants for the helixmedia module
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @copyright  2009 Marc Alier, Jordi Piguillem, Nikolas Galanis
  *  marc.alier@upc.edu
- * @copyright  2009 Universitat Politecnica de Catalunya http://www.upc.edu
+ * @copyright  2009 Universitat Politecnica de Catalunya http://www.upc.edu, MEDIAL
  * @author     Marc Alier
  * @author     Jordi Piguillem
  * @author     Nikolas Galanis
@@ -29,8 +29,6 @@
  * @author     Tim Williams (For Streaming LTD)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die;
 
 /**
  * List of features supported in URL module
@@ -84,7 +82,7 @@ function helixmedia_preallocate_id() {
             $val = $vala->preid;
         }
         // Check the Submissions.
-        $assigninstalled = $DB->get_records('assign_plugin_config', array('plugin' => 'helixassign'));
+        $assigninstalled = $DB->get_records('assign_plugin_config', ['plugin' => 'helixassign']);
         if (count($assigninstalled) > 0) {
             $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignsubmission_helixassign;";
             $valb = $DB->get_record_sql($sql);
@@ -93,7 +91,7 @@ function helixmedia_preallocate_id() {
             }
         }
         // Check the Feedback.
-        $feedinstalled = $DB->get_records('assign_plugin_config', array('plugin' => 'helixfeedback'));
+        $feedinstalled = $DB->get_records('assign_plugin_config', ['plugin' => 'helixfeedback']);
         if (count($feedinstalled) > 0) {
             $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignfeedback_helixfeedback;";
             $valc = $DB->get_record_sql($sql)->preid;
@@ -122,13 +120,13 @@ function helixmedia_preallocate_id() {
 
 /**
  * Get the resource link id
- * @param $cmid Course module id
- * @return The Resource link id
+ * @param int $cmid Course module id
+ * @return int The Resource link id
  */
 function helixmedia_get_preid($cmid) {
     global $DB;
     $cm = get_coursemodule_from_id('helixmedia', $cmid, 0, false, MUST_EXIST);
-    $hmli = $DB->get_record('helixmedia', array('id' => $cm->instance), '*', MUST_EXIST);
+    $hmli = $DB->get_record('helixmedia', ['id' => $cm->instance], '*', MUST_EXIST);
     return $hmli->preid;
 }
 
@@ -138,14 +136,15 @@ function helixmedia_get_preid($cmid) {
  * will create a new instance and return the id number
  * of the new instance.
  *
- * @param object $instance An object from the form in mod.html
+ * @param object $helixmedia An object from the form in mod.html
+ * @param object $mform The Moodle form
  * @return int The id of the newly inserted helixmedia record
  **/
 function helixmedia_add_instance($helixmedia, $mform) {
     global $DB, $CFG;
     require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 
-    $prerec = $DB->get_record('helixmedia_pre', array('id' => $helixmedia->preid));
+    $prerec = $DB->get_record('helixmedia_pre', ['id' => $helixmedia->preid]);
 
     $helixmedia->timecreated = time();
     $helixmedia->timemodified = $helixmedia->timecreated;
@@ -159,7 +158,7 @@ function helixmedia_add_instance($helixmedia, $mform) {
         $helixmedia->showdescriptionlaunch = 0;
     }
 
-    /**Set these to some defaults for now.**/
+    // Set these to some defaults for now.
     $helixmedia->icon = "";
     $helixmedia->secureicon = "";
 
@@ -174,7 +173,8 @@ function helixmedia_add_instance($helixmedia, $mform) {
  * (defined by the form in mod.html) this function
  * will update an existing instance with new data.
  *
- * @param object $instance An object from the form in mod.html
+ * @param object $helixmedia An object from the form in mod.html
+ * @param object $mform The Moodle form
  * @return boolean Success/Fail
  **/
 function helixmedia_update_instance($helixmedia, $mform) {
@@ -205,13 +205,13 @@ function helixmedia_update_instance($helixmedia, $mform) {
 function helixmedia_delete_instance($id) {
     global $DB;
 
-    if (! $helixmedia = $DB->get_record("helixmedia", array("id" => $id))) {
+    if (! $helixmedia = $DB->get_record("helixmedia", ["id" => $id])) {
         return false;
     }
 
     $result = true;
 
-    return $DB->delete_records("helixmedia", array("id" => $helixmedia->id));
+    return $DB->delete_records("helixmedia", ["id" => $helixmedia->id]);
 }
 
 /**
@@ -221,8 +221,11 @@ function helixmedia_delete_instance($id) {
  * $return->time = the time they did it
  * $return->info = a short text description
  *
- * @return null
- * @TODO: implement this moodle function (if needed)
+ * @param object $course
+ * @param object $user
+ * @param object $mod
+ * @param object $helixmedia
+ * @return object|null
  **/
 function helixmedia_user_outline($course, $user, $mod, $helixmedia) {
     return null;
@@ -232,11 +235,12 @@ function helixmedia_user_outline($course, $user, $mod, $helixmedia) {
  * Print a detailed representation of what a user has done with
  * a given particular instance of this module, for user activity reports.
  *
- * @return boolean
- * @TODO: implement this moodle function (if needed)
+ * @param object $course
+ * @param object $user
+ * @param object $mod
+ * @param object $helixmedia
  **/
 function helixmedia_user_complete($course, $user, $mod, $helixmedia) {
-    return true;
 }
 
 /**
@@ -244,9 +248,11 @@ function helixmedia_user_complete($course, $user, $mod, $helixmedia) {
  * that has occurred in helixmedia activities and print it out.
  * Return true if there was output, or false is there was none.
  *
+ * @param object $course
+ * @param bool $isteacher
+ * @param int $timestart
  * @uses $CFG
  * @return boolean
- * @TODO: implement this moodle function
  **/
 function helixmedia_print_recent_activity($course, $isteacher, $timestart) {
     return false;  // True if anything was printed, otherwise false.
@@ -275,13 +281,13 @@ function helixmedia_uninstall() {
 /**
  * Mark the activity completed (if required) and trigger the course_module_viewed event.
  *
- * @param  stdClass $hml        hml object
- * @param  stdClass $course     course object
- * @param  stdClass $cm         course module object
- * @param  stdClass $context    context object
+ * @param  object $hml        hml object
+ * @param  object $course     course object
+ * @param  object $cm         course module object
+ * @param  object $context    context object
+ * @param  object $user       user object or null
  * @since Moodle 3.0
  */
-
 function helixmedia_view($hml, $course, $cm, $context, $user = null) {
     global $USER;
     if ($user == null) {
@@ -289,11 +295,11 @@ function helixmedia_view($hml, $course, $cm, $context, $user = null) {
     }
 
     // Trigger course_module_viewed event.
-    $params = array(
+    $params = [
         'context' => $context,
         'objectid' => $hml->id,
-        'userid' => $user->id
-    );
+        'userid' => $user->id,
+    ];
 
     $event = \mod_helixmedia\event\course_module_viewed::create($params);
     $event->add_record_snapshot('course_modules', $cm);

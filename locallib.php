@@ -17,10 +17,11 @@
 /**
  * This file contains a library of functions and constants for the helixmedia module
  *
- * @package    mod
+ * @package    mod_helixmedia
  * @subpackage helixmedia
  * @author     Tim Williams (For Streaming LTD)
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
  */
 
 defined('MOODLE_INTERNAL') || die;
@@ -34,8 +35,7 @@ define('HML_LAUNCH_NORMAL', 1);
 define('HML_LAUNCH_THUMBNAILS', 2);
 define('HML_LAUNCH_EDIT', 3);
 
-// Special type for migration from the repository module. Now Redundant so disabled.
-//define('HML_LAUNCH_RELINK', 4);
+// Special type for migration from the repository module. Now Redundant so disabled define('HML_LAUNCH_RELINK', 4).
 
 // Assignment submission types.
 define('HML_LAUNCH_STUDENT_SUBMIT', 5);
@@ -69,11 +69,15 @@ define('HML_LAUNCH_LIB_ONLY', 18);
 // For version check.
 define('MEDIAL_MIN_VERSION', '8.0.000');
 
-
+/**
+ * Checks to see if a course module is a group assignment
+ * @param int $cmid The course module id
+ * @return bool true if this is a group assingment
+ **/
 function helixmedia_is_group_assign($cmid) {
     global $DB;
-    $cm = $DB->get_record('course_modules', array('id' => $cmid));
-    $assign = $DB->get_record('assign', array('id' => $cm->instance));
+    $cm = $DB->get_record('course_modules', ['id' => $cmid]);
+    $assign = $DB->get_record('assign', ['id' => $cm->instance]);
 
     if ($assign->teamsubmission) {
          return "Y";
@@ -82,17 +86,22 @@ function helixmedia_is_group_assign($cmid) {
     }
 }
 
+/**
+ * Get assingment reference information need by MEDIAL in the launch
+ * @param int $assignid The assignment ID
+ * @return string The refs as a
+ */
 function helixmedia_get_assign_into_refs($assignid) {
     global $DB;
     $refs = "";
 
-    $module = $DB->get_record("course_modules", array("id" => $assignid));
+    $module = $DB->get_record("course_modules", ["id" => $assignid]);
 
     if (!$module) {
         return "";
     }
 
-    $assignment = $DB->get_record("assign", array("id" => $module->instance));
+    $assignment = $DB->get_record("assign", ["id" => $module->instance]);
 
     if (!$assignment) {
         return "";
@@ -122,6 +131,12 @@ function helixmedia_get_assign_into_refs($assignid) {
     return $refs;
 }
 
+/**
+ * Posts an LTI launch directly to MEDIAL.
+ * @param object $params The parameters to send
+ * @param string $endpoint The launch url to use
+ * @return string The result
+ **/
 function helixmedia_curl_post_launch_html($params, $endpoint) {
     global $CFG;
     $modconfig = get_config("helixmedia");
@@ -136,7 +151,7 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
     }
 
     $curl = new \curl();
-    $curl->setopt(array(
+    $curl->setopt([
         'CURLOPT_TIMEOUT' => 50,
         'CURLOPT_CONNECTTIMEOUT' => 30,
         'CURLOPT_FOLLOWLOCATION' => true,
@@ -146,10 +161,10 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
         'CURLOPT_RETURNTRANSFER' => true,
         'CURLOPT_COOKIESESSION' => true,
         'CURLOPT_COOKIEFILE' => $cookiesfile,
-        'CURLOPT_COOKIEJAR' => $cookiesfile
-        //'CURLOPT_SSL_VERIFYHOST' => false,
-        //'CURLOPT_SSL_VERIFYPEER' => false
-    ));
+        'CURLOPT_COOKIEJAR' => $cookiesfile,
+        // Enable this if we are talking to something with a self-signed cert: 'CURLOPT_SSL_VERIFYHOST' => false,.
+        // Ditto: 'CURLOPT_SSL_VERIFYPEER' => false.
+    ]);
     $result = $curl->post($endpoint, $params);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
@@ -201,7 +216,7 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
 
     $role = helixmedia_get_ims_role($user, $instance->cmid, $course->id, $type, $modtype);
 
-    $requestparams = array(
+    $requestparams = [
         'resource_link_id' => $instance->preid,
         'resource_link_title' => $instance->name,
         'resource_link_description' => substr($intro, 0, 1000),
@@ -210,8 +225,8 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
         'context_id' => $course->id,
         'context_label' => $course->shortname,
         'context_title' => $course->fullname,
-        'launch_presentation_locale' => current_language()
-    );
+        'launch_presentation_locale' => current_language(),
+    ];
 
     $placementsecret = $instance->servicesalt;
 
@@ -223,14 +238,6 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
          ($typeconfig['acceptgrades'] == LTI_SETTING_ALWAYS ||
          ($typeconfig['acceptgrades'] == LTI_SETTING_DELEGATE && $instance->instructorchoiceacceptgrades == LTI_SETTING_ALWAYS ))) {
         $requestparams['lis_result_sourcedid'] = $sourcedid;
-
-        /*
-        if ($typeconfig['forcessl'] == '1') {
-            $serviceurl = lti_ensure_url_is_https($serviceurl);
-        }
-
-        $requestparams['lis_outcome_service_url'] = $serviceurl;
-        */
     }
 
     // Send user's name and email data if appropriate.
@@ -253,8 +260,8 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
     $customstr = $typeconfig['customparameters'];
 
     $instructorcustomstr = "";
-    $custom = array();
-    $instructorcustom = array();
+    $custom = [];
+    $instructorcustom = [];
     if ($customstr) {
         $custom = helix_split_custom_parameters($customstr);
     }
@@ -297,7 +304,7 @@ function helixmedia_build_request($instance, $typeconfig, $course, $type, $user 
  */
 function helix_split_custom_parameters($customstr) {
     $lines = preg_split("/[\n;]/", $customstr);
-    $retval = array();
+    $retval = [];
     foreach ($lines as $line) {
         $pos = strpos($line, "=");
         if ( $pos === false || $pos < 1 ) {
@@ -323,7 +330,7 @@ function helix_split_custom_parameters($customstr) {
  * @return string A role string suitable for passing with an LTI launch
  */
 function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
-    $roles = array();
+    $roles = [];
 
     $coursecontext = context_course::instance($courseid);
     if (empty($cmid) || $cmid == -1) {
@@ -353,9 +360,9 @@ function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
 
 /**
  * Checks the moduletype we are viewing here to see if we can use the more permissive modtype permission
- * @param $modtype The module type
- * @param $edtype The editor type to look in
- * @return The permission to use
+ * @param string $modtype The module type
+ * @param string $edtype The editor type to look in
+ * @return string The permission to use
  **/
 function helixmedia_get_visiblecap($modtype = false, $edtype = 'atto/helixatto') {
     if (!$modtype) {
@@ -374,7 +381,7 @@ function helixmedia_get_visiblecap($modtype = false, $edtype = 'atto/helixatto')
 
     for ($i = 0; $i < count($types); $i++) {
         $types[$i] = trim($types[$i]);
-        if (strlen($types[$i]) > 0 && $types[$i] == $modtype && $DB->get_record('modules', array('name' => $types[$i]))) {
+        if (strlen($types[$i]) > 0 && $types[$i] == $modtype && $DB->get_record('modules', ['name' => $types[$i]])) {
             return $edtype.':visiblemodtype';
         }
     }
@@ -382,6 +389,10 @@ function helixmedia_get_visiblecap($modtype = false, $edtype = 'atto/helixatto')
     return $edtype;
 }
 
+/**
+ * Gets a the URL of the current page directly from header information
+ * @return string
+ */
 function curpageurl() {
     $pageurl = 'http';
     if (array_key_exists("HTTPS", $_SERVER) && $_SERVER["HTTPS"] == "on") {
@@ -397,11 +408,17 @@ function curpageurl() {
     return $pageurl;
 }
 
+/**
+ * Gets the launch instance size information
+ * @param int $preid Resource link ID
+ * @param int $course The Course id
+ * @return object containing size information
+ */
 function helixmedia_get_instance_size($preid, $course) {
     global $CFG;
     $url = helixmedia_get_playerwidthurl();
-    $retdata = helixmedia_curl_post_launch_html(array("context_id" => $course, "resource_link_id" => $preid,
-        "include_height" => "Y"), $url);
+    $retdata = helixmedia_curl_post_launch_html(["context_id" => $course, "resource_link_id" => $preid,
+        "include_height" => "Y"], $url);
 
     $parts = explode(":", $retdata);
     // If there is more than one part, then MEDIAL understands the include_height param.
@@ -425,18 +442,35 @@ function helixmedia_get_instance_size($preid, $course) {
     return $vals;
 }
 
+/**
+ * Gets the URL to use for player width queries
+ * @return string url
+ */
 function helixmedia_get_playerwidthurl() {
     return helixmedia_get_alturl("PlayerWidth");
 }
 
+/**
+ * Gets the URL to use for session status queries
+ * @return string url
+ */
 function helixmedia_get_status_url() {
     return helixmedia_get_alturl("SessionStatus");
 }
 
+/**
+ * Gets the URL to use for upload status queries
+ * @return string url
+ */
 function helixmedia_get_upload_url() {
     return helixmedia_get_alturl("UploadStatus");
 }
 
+/**
+ * Gets an LTI URL with /Launch substituted
+ * @param string $alt The string to substitute
+ * @return string url
+ */
 function helixmedia_get_alturl($alt) {
     $statusurl = trim(get_config("helixmedia", "launchurl"));
     $pos = helixmedia_str_contains(strtolower($statusurl), "/launch", true);
@@ -444,30 +478,29 @@ function helixmedia_get_alturl($alt) {
 }
 
 /**
-* Checks if a MEDIAL resource link id has been used.
-* @param $preid The resource link ID we are interested in
-* @param $as Redundant (was the assignment submission)
-* @param $userid The user who owns the media
-* @return true if the resource link id has nothing associated with it.
-**/
-
+ * Checks if a MEDIAL resource link id has been used.
+ * @param int $preid The resource link ID we are interested in
+ * @param int $as Redundant (was the assignment submission)
+ * @param int $userid The user who owns the media
+ * @return true if the resource link id has nothing associated with it.
+ **/
 function helixmedia_is_preid_empty($preid, $as, $userid) {
     return !helixmedia_get_media_status($preid, $userid, true);
 }
 
 /**
-* Gets the status of the uploaded medial.
-* @param $preid The resource link ID we are interested in
-* @param $userid The user who owns the media
-* @param $statusonly true if we only want a true false upload status here
-* @return false if nothing has been uploaded, true or the timestamp the media was linked to the resource link ID (depending on status field)
-* Note, will return a boolean if MEDIAL doesn't return a creation date.
-**/
-
+ * Gets the status of the uploaded medial.
+ * @param int $preid The resource link ID we are interested in
+ * @param int $userid The user who owns the media
+ * @param bool $statusonly true if we only want a true false upload status here
+ * @return bool false if nothing has been uploaded, true or the timestamp the media was linked
+ * to the resource link ID (depending on status field)
+ * Note, will return a boolean if MEDIAL doesn't return a creation date.
+ **/
 function helixmedia_get_media_status($preid, $userid, $statusonly = false) {
     global $CFG;
 
-    $retdata = helixmedia_curl_post_launch_html(array("resource_link_id" => $preid, "user_id" => $userid, "json" => "Y"),
+    $retdata = helixmedia_curl_post_launch_html(["resource_link_id" => $preid, "user_id" => $userid, "json" => "Y"],
         helixmedia_get_upload_url());
 
     // We got a 404, the MEDIAL server doesn't support this call, so return false.
@@ -476,7 +509,7 @@ function helixmedia_get_media_status($preid, $userid, $statusonly = false) {
         return true;
     }
 
-    // The MEDIAL server doesn't support the json call (Introduced with 8.0.008)
+    // The MEDIAL server doesn't support the json call (Introduced with 8.0.008).
     if (strlen($retdata) == 1) {
         if ($retdata == "Y") {
             return true;
@@ -501,7 +534,13 @@ function helixmedia_get_media_status($preid, $userid, $statusonly = false) {
     return $dt->getTimestamp();
 }
 
-
+/**
+ * String search convenience method
+ * @param string $haystack String to search
+ * @param string $needle String to look for
+ * @param bool $ignorecase true to ignore case
+ * @return bool false or striing position
+ **/
 function helixmedia_str_contains($haystack, $needle, $ignorecase = false) {
     if ($ignorecase) {
         $haystack = strtolower($haystack);
@@ -511,7 +550,10 @@ function helixmedia_str_contains($haystack, $needle, $ignorecase = false) {
     return ($needlepos === false ? false : ($needlepos + 1));
 }
 
-
+/**
+ * Checks the version of MEDIAL we are pointing at
+ * @return string Version check information
+ **/
 function helixmedia_version_check() {
     $statusurl = trim(get_config("helixmedia", "launchurl"));
     if (strlen($statusurl) == 0) {
@@ -521,7 +563,7 @@ function helixmedia_version_check() {
     $endpoint = substr($statusurl, 0, $pos)."/version.txt";
 
     $curl = new \curl();
-    $curl->setopt(array(
+    $curl->setopt([
         'CURLOPT_TIMEOUT' => 50,
         'CURLOPT_CONNECTTIMEOUT' => 30,
         'CURLOPT_FOLLOWLOCATION' => true,
@@ -529,9 +571,9 @@ function helixmedia_version_check() {
         'CURLOPT_FRESH_CONNECT' => true,
         'CURLOPT_FORBID_REUSE' => true,
         'CURLOPT_RETURNTRANSFER' => true,
-        //'CURLOPT_SSL_VERIFYHOST' => false,
-        //'CURLOPT_SSL_VERIFYPEER' => false
-    ));
+        // For self signed cert debugging: 'CURLOPT_SSL_VERIFYHOST' => false,.
+        // Ditto: 'CURLOPT_SSL_VERIFYPEER' => false.
+    ]);
     $result = $curl->get($endpoint);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
@@ -556,6 +598,11 @@ function helixmedia_version_check() {
     return $message;
 }
 
+/**
+ * Parses the MEDIAL version into a single int
+ * @param string $str $str The version string
+ * @return int version number
+ * */
 function parse_medial_version($str) {
     $parts = explode('.', $str);
     $concat = '';
@@ -565,6 +612,12 @@ function parse_medial_version($str) {
     return intval($concat);
 }
 
+/**
+ * handle dynamic resizing of the iframe
+ * @param object $hmli The module instance
+ * @param int $c
+ * @return The resize code
+ */
 function helixmedia_legacy_dynamic_size($hmli, $c) {
     // This handles dynamic sizing of the launch frame.
     $size = helixmedia_get_instance_size($hmli->preid, $c);
@@ -626,6 +679,11 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
     }
 }
 
+/**
+ * Look at URL information to detect when we are in the assing grading area
+ * @param string $url The url
+ * @return bool true if we are grading
+ */
 function helixmedia_detect_assign_grading_view($url) {
     $url = parse_url($url);
 
@@ -635,7 +693,7 @@ function helixmedia_detect_assign_grading_view($url) {
 
     $query = explode('&', $url['query']);
 
-    // These three actions equate to a tutor viewing a submission
+    // These three actions equate to a tutor viewing a submission.
     if (strpos($url['query'], 'action=viewpluginassignsubmission') !== false ||
         strpos($url['query'], 'action=grading') !== false ||
         strpos($url['query'], 'action=grader') !== false

@@ -14,24 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * This page contains the instance configuration form for the HML activity.
- *
- * @package    mod
- * @subpackage helixmedia
- * @author     Tim Williams for Streaming LTD
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-if (!defined('MOODLE_INTERNAL')) {
-    die('Direct access to this script is forbidden.'); // It must be included from a Moodle page.
-}
+defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/course/moodleform_mod.php');
 require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 
+/**
+ * This page contains the instance configuration form for the HML activity.
+ *
+ * @package    mod_helixmedia
+ * @subpackage helixmedia
+ * @author     Tim Williams for Streaming LTD
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @copyright  MEDIAL
+ */
 class mod_helixmedia_mod_form extends moodleform_mod {
 
+    /**
+     * Defines the form
+     */
     public function definition() {
         global $add, $CFG, $update, $DB, $PAGE;
         $mform =& $this->_form;
@@ -54,7 +55,7 @@ class mod_helixmedia_mod_form extends moodleform_mod {
             $this->add_intro_editor(true, get_string("helixmediasummary", "helixmedia"));
         }
 
-        $launchoptions = array();
+        $launchoptions = [];
         $launchoptions[LTI_LAUNCH_CONTAINER_DEFAULT] = get_string('default', 'lti');
         $launchoptions[LTI_LAUNCH_CONTAINER_EMBED] = get_string('embed', 'lti');
         $launchoptions[LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS] = get_string('embed_no_blocks', 'lti');
@@ -71,13 +72,16 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
         $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), '');
-        $features = array('groups' => false, 'groupings' => false, 'groupmembersonly ' => true,
-                          'outcomes' => false, 'gradecat' => false, 'idnumber' => false);
+        $features = ['groups' => false, 'groupings' => false, 'groupmembersonly ' => true,
+                          'outcomes' => false, 'gradecat' => false, 'idnumber' => false];
         $this->standard_coursemodule_elements($features);
         $this->add_action_buttons();
     }
 
-    function definition_after_data() {
+    /**
+     * Set values in the form after creation
+     */
+    public function definition_after_data() {
         global $PAGE, $add, $update;
         $mform =& $this->_form;
         $pr =& $mform->getElement('preid');
@@ -87,8 +91,8 @@ class mod_helixmedia_mod_form extends moodleform_mod {
             $preid = helixmedia_preallocate_id();
             $pr->setValue($preid);
             $disp = new \mod_helixmedia\output\modal($preid,
-                array('type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid),
-                array('type' => HML_LAUNCH_EDIT, 'l' => $preid), true);
+                ['type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid],
+                ['type' => HML_LAUNCH_EDIT, 'l' => $preid], true);
             $ch->setValue($output->render($disp));
             return;
         }
@@ -97,8 +101,8 @@ class mod_helixmedia_mod_form extends moodleform_mod {
             $preid = helixmedia_get_preid($update);
             $pr->setValue($preid);
             $disp = new \mod_helixmedia\output\modal($preid,
-                array('type' => HML_LAUNCH_THUMBNAILS, 'id' => $update),
-                array('type' => HML_LAUNCH_EDIT, 'id' => $update), true);
+                ['type' => HML_LAUNCH_THUMBNAILS, 'id' => $update],
+                ['type' => HML_LAUNCH_EDIT, 'id' => $update], true);
             $ch->setValue($output->render($disp));
             return;
         }

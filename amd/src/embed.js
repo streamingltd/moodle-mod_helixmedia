@@ -14,7 +14,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package    mod_helixmedia
+ * @package
  * @copyright  2023 Tim Williams Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -33,7 +33,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
             evt.preventDefault();
             minst.modal.show();
             if (minst.firsttime) {
-                $('#mod_helixmedia_launchframe_'+minst.params.preid+minst.params.extraid).attr('src', minst.params.launchurl);
+                $('#mod_helixmedia_launchframe_' + minst.params.preid + minst.params.extraid).attr('src', minst.params.launchurl);
                 minst.firsttime = false;
             }
         };
@@ -44,17 +44,17 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
                 body: Templates.render('mod_helixmedia/modalinner', minst.params),
                 large: true
             });
-        }
+        };
 
         minst.bind = function() {
-            $('#helixmedia_ltimodal_'+minst.params.preid+minst.params.extraid).click(minst.openmodal);
-            $('#helixmedia_ltimodalimg_'+minst.params.preid+minst.params.extraid).click(minst.openmodal);
+            $('#helixmedia_ltimodal_' + minst.params.preid + minst.params.extraid).click(minst.openmodal);
+            $('#helixmedia_ltimodalimg_' + minst.params.preid + minst.params.extraid).click(minst.openmodal);
             minst.initmodal();
         };
 
         minst.unbind = function() {
-            $('#helixmedia_ltimodal_'+minst.params.preid+minst.params.extraid).unbind('click');
-            $('#helixmedia_ltimodalimg_'+minst.params.preid+minst.params.extraid).unbind('click');         
+            $('#helixmedia_ltimodal_' + minst.params.preid + minst.params.extraid).unbind('click');
+            $('#helixmedia_ltimodalimg_' + minst.params.preid + minst.params.extraid).unbind('click');
         };
 
         return minst;
@@ -63,12 +63,12 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
         sessionURL, sessionFreq, resDelay, extraID, title, library) {
 
-        // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page. 
+        // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.
 
         // Sanity check, sometimes this gets called more than once with the same resID. Clean up the old one and re-init.
-        if (typeof module.instances[resID+extraID] !== 'undefined') {
-            module.instances[resID+extraID].unbind();
+        if (typeof module.instances[resID + extraID] !== 'undefined') {
+            module.instances[resID + extraID].unbind();
         }
 
         var params = {};
@@ -83,7 +83,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
             params.viewonly = true;
         }
         var medialhandler = module.medialinstance($, params);
-        module.instances[resID+extraID] = medialhandler;
+        module.instances[resID + extraID] = medialhandler;
         medialhandler.bind();
     };
 

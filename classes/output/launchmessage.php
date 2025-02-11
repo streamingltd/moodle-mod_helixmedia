@@ -14,17 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
 namespace mod_helixmedia\output;
-defined('MOODLE_INTERNAL') || die();
-
-/**
- * Launch activity
- *
- * @package    mod_helixmedia
- * @copyright  2021 Tim Williams <tmw@autotrain.org>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 
 use renderable;
 use renderer_base;
@@ -39,21 +29,35 @@ use templatable;
  */
 class launchmessage implements renderable, templatable {
 
-    private $message, $class;
+    /**
+     * @var The message we want to show
+     */
+    private $message;
 
     /**
-    * Constructor.
-    **/
+     * @var A css class to apply to the message
+     */
+    private $class;
 
+    /**
+     * Constructor.
+     * @param string $message The message we want to show
+     * @param string $class A css class to apply to the message
+     */
     public function __construct($message, $class = '') {
         $this->message = $message;
         $this->class = $class;
     }
 
+    /**
+     * Exports data for rendering
+     * @param renderer_base $output The renderer
+     * @return array
+     */
     public function export_for_template(renderer_base $output) {
-        return array(
+        return [
             'message' => $this->message,
-            'class' => $this->class
-        );  
+            'class' => $this->class,
+        ];
     }
 }
