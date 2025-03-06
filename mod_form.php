@@ -72,9 +72,8 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
         $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), '');
-        $features = ['groups' => false, 'groupings' => false, 'groupmembersonly ' => true,
-                          'outcomes' => false, 'gradecat' => false, 'idnumber' => false];
-        $this->standard_coursemodule_elements($features);
+
+        $this->standard_coursemodule_elements();
         $this->add_action_buttons();
     }
 
@@ -94,7 +93,6 @@ class mod_helixmedia_mod_form extends moodleform_mod {
                 ['type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid],
                 ['type' => HML_LAUNCH_EDIT, 'l' => $preid], true);
             $ch->setValue($output->render($disp));
-            return;
         }
 
         if ($update) {
@@ -104,8 +102,8 @@ class mod_helixmedia_mod_form extends moodleform_mod {
                 ['type' => HML_LAUNCH_THUMBNAILS, 'id' => $update],
                 ['type' => HML_LAUNCH_EDIT, 'id' => $update], true);
             $ch->setValue($output->render($disp));
-            return;
         }
+        parent::definition_after_data();
     }
 
 }
