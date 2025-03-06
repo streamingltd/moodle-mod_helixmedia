@@ -182,11 +182,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
         $hmli->cmid = -1;
     }
     $course = $DB->get_record('course', ['id' => $c], '*', MUST_EXIST);
-    if (method_exists("context_course", "instance")) {
-        $context = context_course::instance($course->id);
-    } else {
-        $context = get_context_instance(CONTEXT_COURSE, $course->id);
-    }
+    $context = context_course::instance($course->id);
     $PAGE->set_context($context);
 } else {
     // Normal launch.
@@ -231,11 +227,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
     }
 
     $PAGE->set_cm($cm, $course);
-    if (method_exists("context_module", "instance")) {
-        $context = context_module::instance($cm->id);
-    } else {
-        $context = get_context_instance(CONTEXT_MODULE, $cm->id);
-    }
+    $context = context_module::instance($cm->id);
     $PAGE->set_context($context);
 }
 

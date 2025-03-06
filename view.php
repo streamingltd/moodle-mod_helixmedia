@@ -57,12 +57,7 @@ $toolconfig["launchcontainer"] = get_config("helixmedia", "default_launch");
 
 $PAGE->set_cm($cm, $course); // Set's up global $COURSE.
 
-if (method_exists("context_module", "instance")) {
-    $context = context_module::instance($cm->id);
-} else {
-    $context = get_context_instance(CONTEXT_MODULE, $cm->id);
-}
-
+$context = context_module::instance($cm->id);
 $PAGE->set_context($context);
 
 $url = new moodle_url('/mod/helixmedia/view.php', ['id' => $cm->id]);
