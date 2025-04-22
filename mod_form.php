@@ -78,6 +78,7 @@ class mod_helixmedia_mod_form extends moodleform_mod {
     }
 
     function definition_after_data() {
+        parent::definition_after_data();
         global $PAGE, $add, $update;
         $mform =& $this->_form;
         $pr =& $mform->getElement('preid');
