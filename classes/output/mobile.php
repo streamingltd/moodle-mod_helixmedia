@@ -29,7 +29,6 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
 require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
-require_once($CFG->libdir.'/externallib.php'); 
 
 use context_module;
 use mod_helixmedia_external;
@@ -73,6 +72,7 @@ class mobile {
             "&mobiletokenid=".$tokenid."&mobiletoken=".$token;
 
         $helixmedia->name = format_string($helixmedia->name);
+        require_once($CFG->libdir.'/externallib.php');
         list($helixmedia->intro, $helixmedia->introformat) =
             external_format_text($helixmedia->intro, $helixmedia->introformat, $context->id, 'mod_helixmedia', 'intro');
 
