@@ -15,31 +15,138 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Privacy Subsystem implementation for format_tabtopics.
+ * Privacy Subsystem implementation for mod_helixmedia.
  *
- * @package    mod_helixmedia
- * @copyright  
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     mod_helixmedia  
+ * @copyright   Catalyst IT Canada LTD
+ * @author      Niko Hoogeveen <nikohoogeveen@catalyst-ca.net>
+ * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace mod_helixmedia\privacy;
 
-defined('MOODLE_INTERNAL') || die();
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\approved_userlist;
 
-/**
- * The format_tabtopics
- *
- */
-class provider implements \core_privacy\local\metadata\null_provider
-{
+class provider implements   \core_privacy\local\metadata\provider,
+                            \core_privacy\local\request\core_userlist_provider, 
+                            \core_privacy\local\request\plugin\provider {
+
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Return the fields which contain personal data.
      *
-     * @return string
+     * @param collection $items a reference to the collection to use to store the metadata.
+     * @return collection the updated collection of metadata items.
      */
-    public static function get_reason(): string
-    {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection) : collection {
+
+        $collection->add_database_table(
+            'helixmedia_mobile',
+            [
+                'userid' => 'privacy:metadata:helixmedia_mobile:userid'
+            ],
+            'privacy:metadata:helixmedia_mobile'
+        );
+
+        return $collection;
+    }
+
+    /**
+     * Get the list of contexts that contain user information for the specified user.
+     *
+     * @param int $userid the userid.
+     * @return contextlist the list of contexts containing user info for the user.
+     */
+    public static function get_contexts_for_userid(int $userid) : contextlist{
+        // Initialize contextlist object
+        $contextlist = new \core_privacy\local\request\contextlist();
+
+        // Define SQL query to find the contexts containing user information
+        $sql = "SELECT ctx.id
+                FROM {context} ctx
+                JOIN {helixmedia_mobile} hmm ON hmm.course = ctx.instanceid
+                WHERE hmm.userid = :userid";
+
+        // Execute the query and get the list of context ID's
+        $params = [ 'userid' => $userid ];
+        $contextlist->add_from_sql($sql, $params);
+
+        return $contextlist;
+    }
+
+    /**
+     * Get the list of users who have data within a context.
+     *
+     * @param userlist $userlist The userlist containing the list of users who have data in this context/plugin combination.
+     */
+    public static function get_users_in_context(userlist $userlist) {
+        $context = $userlist->get_context();
+
+        if (!$context instanceof \context_module) {
+            return;
+        }
+
+        $sql = "SELECT hmm.userid
+                FROM {helixmedia_mobile} hmm
+                WHERE hmm.course = :courseid";
+
+        $params = ['courseid' => $context->instanceid];
+
+        $userlist->add_from_sql('userid', $sql, $params);
+    }
+
+    /**
+     * Export personal data for the given approved_contextlist. User and context information is contained within the contextlist.
+     *
+     * @param approved_contextlist $contextlist a list of contexts approved for export.
+     */
+    public static function export_user_data(approved_contextlist $contextlist) {
+    }
+
+    /**
+     * Delete all data for all users in the specified context.
+     *
+     * @param \context $context the context to delete in.
+     */
+    public static function delete_data_for_all_users_in_context(\context $context) {
+        global $DB;
+
+        if (!$context instanceof \context_course) {
+            return;
+        }
+
+        $conditions = ['course' => $context->instanceid];
+        $DB->delete_records('helixmedia_mobile', $conditions);
+    }
+
+    /**
+     * Delete all user data for the specified user, in the specified contexts.
+     *
+     * @param approved_contextlist $contextlist a list of contexts approved for deletion.
+     */
+    public static function delete_data_for_user(approved_contextlist $contextlist) {
+        global $DB;
+
+        $userid = $contextlist->get_user()->id;
+        
+        if (!$context instanceof \context_course) {
+            return;
+        }
+
+        foreach ($contextlist as $context) {        
+            $conditions = ['userid' => $userid, 'course' => $context->instanceid];
+            $DB->delete_records('helixmedia_mobile', $conditions);
+        }
+    }
+
+    /**
+     * Delete multiple users within a single context.
+     *
+     * @param   approved_userlist       $userlist The approved context and user information to delete information for.
+     */
+    public static function delete_data_for_users(approved_userlist $userlist) {
     }
 }
