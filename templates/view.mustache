@@ -22,6 +22,8 @@
     Example context (json):
     { "aspect": "embed-responsive-16by9", "style": "", "launchurl": "-MEDIALURL-" }
 }}
-<div class="embed-responsive {{aspect}} helixmedia_embedheight" style="{{style}}">
-<iframe allow="fullscreen" class="embed-responsive-item overflow-auto border-0" src="{{{launchurl}}}"></iframe>
+<div class="{{^bs5}}embed-responsive {{^audioonly}}embed-responsive-16by9{{/audioonly}}{{/bs5}}
+    {{#bs5}}ms-auto me-auto ratio {{^audioonly}}ratio-16x9{{/audioonly}}{{/bs5}} helixmedia_embedheight"
+    {{#audioonly}}style="height:100px"{{/audioonly}}>
+    <iframe allow="fullscreen" class="{{^bs5}}embed-responsive-item{{/bs5}} overflow-auto border-0" src="{{{launchurl}}}"></iframe>
 </div>

@@ -42,6 +42,10 @@
     width: 97%;
 }
 
+.helixmedia_fittext {
+    font-size: 0.5em;
+}
+
 @media (max-width: 600px) {
     .helixmedia_ltimodal {
         font: normal normal normal 22px/1.2em avenir-lt-w01_35-light1475496, avenir-lt-w05_35-light, sans-serif;

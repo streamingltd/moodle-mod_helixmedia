@@ -22,13 +22,13 @@
     Example context (json):
     {"preid": "123", "extraid": "", "text": "text"}
 }}
-<div id="mod_helixmedia_modal_{{preid}}{{extraid}}" class="modal fade mod_helixmedia_modal_custom" role="dialog" data-backdrop="false" >
+<div id="mod_helixmedia_modal_{{preid}}{{extraid}}" class="modal fade" role="dialog" data-backdrop="false" >
   <div class="modal-dialog" style="max-width:1000px" >
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title">{{text}}</h4>
-        <button type="button" class="close text-right" data-dismiss="modal" aria-label="Close" id="mod_helixmedia_closemodal_{{preid}}{{extraid}}">
-          <span aria-hidden="true">&times;</span>
+        <button type="button" class="{{#bs5}}btn-{{/bs5}}close text-right" data-{{#bs5}}bs-{{/bs5}}dismiss="modal" aria-label="Close" id="mod_helixmedia_closemodal_{{preid}}{{extraid}}">
+          {{^bs5}}<span aria-hidden="true">&times;</span>{{/bs5}}
         </button>
       </div>
       <div class="modal-body p-0 pt-2" id="mod_helixmedia_modal_body">

@@ -22,7 +22,9 @@
     Example context (json):
     {"preid": "100", "extraid": "", "medialurl": "https://mymoodle.org", "viewonly": true}
 }}
-<div class="embed-responsive {{#viewonly}}embed-responsive-16by9 {{/viewonly}}{{#larger}}embed-responsive-1by1 {{/larger}}{{#edit}}helixmedia_dialog{{/edit}}">
-   <iframe id="mod_helixmedia_launchframe_{{preid}}{{extraid}}" class="embed-responsive-item overflow-auto border-0" 
+<div class="{{#bs5}}ratio {{#viewonly}}ratio-16x9 {{/viewonly}}{{#larger}}ratio-1x1 {{/larger}}{{/bs5}}
+    {{^bs5}}embed-responsive {{#viewonly}}embed-responsive-16by9 {{/viewonly}}{{#larger}}embed-responsive-1by1 {{/larger}}{{/bs5}}
+    {{#edit}}helixmedia_dialog{{/edit}}">
+   <iframe id="mod_helixmedia_launchframe_{{preid}}{{extraid}}" class="{{^bs5}}embed-responsive-item{{/bs5}} overflow-auto border-0" 
        allow="fullscreen; microphone {{medialurl}}; camera {{medialurl}}; display-capture {{medialurl}};"></iframe>
 </div>

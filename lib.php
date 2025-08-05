@@ -164,6 +164,10 @@ function helixmedia_add_instance($helixmedia, $mform) {
 
     $helixmedia->id = $DB->insert_record('helixmedia', $helixmedia);
 
+    $completiontimeexpected = !empty($helixmedia->completionexpected) ? $helixmedia->completionexpected : null;
+        \core_completion\api::update_completion_date_event($helixmedia->coursemodule, 'helixmedia',
+        $helixmedia->id, $completiontimeexpected);
+
     return $helixmedia->id;
 }
 
@@ -191,6 +195,10 @@ function helixmedia_update_instance($helixmedia, $mform) {
         $helixmedia->showdescriptionlaunch = 0;
     }
 
+    $completiontimeexpected = !empty($helixmedia->completionexpected) ? $helixmedia->completionexpected : null;
+        \core_completion\api::update_completion_date_event($helixmedia->coursemodule, 'helixmedia',
+        $helixmedia->id, $completiontimeexpected);
+
     return $DB->update_record('helixmedia', $helixmedia);
 }
 
@@ -211,51 +219,8 @@ function helixmedia_delete_instance($id) {
 
     $result = true;
 
-    return $DB->delete_records("helixmedia", ["id" => $helixmedia->id]);
-}
-
-/**
- * Return a small object with summary information about what a
- * user has done with a given particular instance of this module
- * Used for user activity reports.
- * $return->time = the time they did it
- * $return->info = a short text description
- *
- * @param object $course
- * @param object $user
- * @param object $mod
- * @param object $helixmedia
- * @return object|null
- **/
-function helixmedia_user_outline($course, $user, $mod, $helixmedia) {
-    return null;
-}
-
-/**
- * Print a detailed representation of what a user has done with
- * a given particular instance of this module, for user activity reports.
- *
- * @param object $course
- * @param object $user
- * @param object $mod
- * @param object $helixmedia
- **/
-function helixmedia_user_complete($course, $user, $mod, $helixmedia) {
-}
-
-/**
- * Given a course and a time, this module should find recent activity
- * that has occurred in helixmedia activities and print it out.
- * Return true if there was output, or false is there was none.
- *
- * @param object $course
- * @param bool $isteacher
- * @param int $timestart
- * @uses $CFG
- * @return boolean
- **/
-function helixmedia_print_recent_activity($course, $isteacher, $timestart) {
-    return false;  // True if anything was printed, otherwise false.
+    $DB->delete_records("helixmedia", ["id" => $helixmedia->id]);
+    return true;
 }
 
 /**

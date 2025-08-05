@@ -67,7 +67,7 @@ define('HML_LAUNCH_LIB_ONLY', 18);
 // Note next ID should be 19.
 
 // For version check.
-define('MEDIAL_MIN_VERSION', '8.0.000');
+define('MEDIAL_MIN_VERSION', '8.5.000');
 
 /**
  * Checks to see if a course module is a group assignment
@@ -701,4 +701,17 @@ function helixmedia_detect_assign_grading_view($url) {
         return true;
     }
     return false;
+}
+
+/**
+ * Are we installed on Moodle v5+
+ * @return bool true if we are
+ */
+function helixmedia_is_moodle_5() {
+    global $CFG;
+    if ($CFG->version >= 2025041400) {
+        return true;
+    } else {
+        return false;
+    }
 }

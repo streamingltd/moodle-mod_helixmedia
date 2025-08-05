@@ -57,11 +57,26 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
             $('#helixmedia_ltimodalimg_' + minst.params.preid + minst.params.extraid).unbind('click');
         };
 
+        module.textfit($);
+
         return minst;
     };
 
+
+    module.textfit = function($) {
+        $('.helixmedia_fittext').each(function() {
+            var w2 = $(this).width();
+            if ($(this).text().length > 16 && w2 < 240) {
+                var ratio = w2 / 240;
+                $(this).css('font-size', ratio + 'em');
+            } else {
+                $(this).css('font-size', 'large');
+            }
+        });
+    };
+
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
-        sessionURL, sessionFreq, resDelay, extraID, title, library) {
+        sessionURL, sessionFreq, resDelay, extraID, title, library, bs5) {
 
         // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.
@@ -77,6 +92,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
         params.preid = resID;
         params.extraid = extraID;
         params.title = title;
+        params.bs5 = bs5;
         if (library || doStatusCheck) {
             params.larger = true;
         } else {

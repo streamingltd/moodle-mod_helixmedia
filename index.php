@@ -79,12 +79,7 @@ foreach ($hmlis as $hmli) {
     }
 
     if ($usesections) {
-        // MDL2.4+ works slightly differently here.
-        if ($CFG->version >= 2012120300) {
-            $table->data[] = [get_section_name($course, $hmli->section), $link];
-        } else {
-            $table->data[] = [$hmli->section, $link];
-        }
+        $table->data[] = [get_section_name($course, $hmli->section), $link];
     } else {
         $table->data[] = [$link];
     }

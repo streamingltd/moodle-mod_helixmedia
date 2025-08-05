@@ -189,6 +189,7 @@ class modal implements renderable, templatable {
             $this->extraid,
             $this->text,
             $this->library,
+            helixmedia_is_moodle_5(),
         ];
     }
 
@@ -223,6 +224,7 @@ class modal implements renderable, templatable {
             'viewonly' => $this->viewonly,
             'edit' => $this->edit,
             'library' => $this->library,
+            'bs5' => helixmedia_is_moodle_5(),
         ];
 
         switch ($this->icon) {

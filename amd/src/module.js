@@ -29,12 +29,14 @@ define(['jquery'], function($) {
         var minst = {};
         minst.params = params;
         minst.params.gotIn = false;
-        minst.params.medialinterval = false;
+        minst.params.medialInterval = false;
 
         minst.openmodal = function(evt) {
             evt.preventDefault();
             $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', minst.params.launchurl);
-            $('.modal-backdrop').css('position', 'relative');
+            if (!minst.params.bs5) {
+                $('.modal-backdrop').css('position', 'relative');
+            }
             $('.modal-backdrop').css('z-index', '0');
 
             if (minst.params.doStatusCheck) {
@@ -43,14 +45,26 @@ define(['jquery'], function($) {
             }
         };
 
+        minst.textfit = function($) {
+            $('.helixmedia_fittext').each(function() {
+                var w2 = $(this).width();
+                if ($(this).text().length > 16 && w2 < 240) {
+                    var ratio = w2 / 240;
+                    $(this).css('font-size', ratio + 'em');
+                } else {
+                    $(this).css('font-size', 'large');
+                }
+            });
+        };
+
         minst.closemodalListen = function(evt) {
             evt.preventDefault();
             minst.closemodal();
         };
 
         minst.closemodal = function() {
-            if (minst.params.medialinterval != false) {
-                clearInterval(minst.params.medialinterval);
+            if (minst.params.medialInterval != false) {
+                clearInterval(minst.params.medialInterval);
             }
 
             $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', '');
@@ -60,7 +74,7 @@ define(['jquery'], function($) {
             }
 
             var tframe = document.getElementById("mod_helixmedia_thumbframe_" + minst.params.docID);
-            if (tframe !== null && typeof (minst.params.thumburl) != "undefined") {
+            if (tframe !== null && typeof (minst.params.thumburl) !== "undefined") {
                 tframe.contentWindow.location = minst.params.thumburl;
             }
 
@@ -80,13 +94,15 @@ define(['jquery'], function($) {
         minst.bind = function() {
             $('#helixmedia_ltimodal_' + minst.params.docID).click(minst.openmodal);
             $('#mod_helixmedia_closemodal_' + minst.params.docID).click(minst.closemodalListen);
+
+            minst.textfit($);
         };
 
         minst.unbind = function() {
             $('#helixmedia_ltimodal_' + minst.params.docID).off();
             $('#mod_helixmedia_closemodal_' + minst.params.docID).off();
-            if (minst.params.medialinterval != false) {
-                clearInterval(minst.params.medialinterval);
+            if (minst.params.medialInterval != false) {
+                clearInterval(minst.params.medialInterval);
             }
         };
 
@@ -103,8 +119,8 @@ define(['jquery'], function($) {
                 minst.params.gotIn = true;
             }
             if (responseText != "OUT" || minst.params.gotIn == false) {
-                if (minst.params.medialinterval == false) {
-                    minst.params.medialinterval = setInterval(minst.checkStatus, 2000);
+                if (minst.params.medialInterval == false) {
+                    minst.params.medialInterval = setInterval(minst.checkStatus, 2000);
                 }
             } else {
 
@@ -118,8 +134,8 @@ define(['jquery'], function($) {
 
         minst.checkStatus = function() {
             var xmlDoc = new XMLHttpRequest();
-            var params = "resource_link_id=" + minst.params.resID +
-                "&user_id=" + minst.params.userID + "&oauth_consumer_key=" + minst.params.oauthConsumerKey;
+            var params = "resource_link_id=" + minst.params.resID + "&user_id=" + minst.params.userID +
+                "&oauth_consumer_key=" + minst.params.oauthConsumerKey;
             xmlDoc.addEventListener("load", minst.checkStatusResponse);
             xmlDoc.open("POST", minst.params.statusURL);
             xmlDoc.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
@@ -130,7 +146,7 @@ define(['jquery'], function($) {
     };
 
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
-        sessionURL, sessionFreq, resDelay, extraID) {
+        sessionURL, sessionFreq, resDelay, extraID, title, library, bs5) {
 
         // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.
@@ -153,6 +169,8 @@ define(['jquery'], function($) {
         params.sessionFreq = sessionFreq;
         params.resDelay = resDelay;
         params.docID = resID + extraID;
+        params.bs5 = bs5;
+
         var medialhandler = module.medialinstance($, params);
         module.instances[params.docID] = medialhandler;
         medialhandler.bind();

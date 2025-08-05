@@ -15,10 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace mod_helixmedia\output;
+defined('MOODLE_INTERNAL') || die();
 
 use renderable;
 use renderer_base;
 use templatable;
+
+require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
 
 /**
  * Container renderable class.
@@ -62,18 +65,10 @@ class view implements renderable, templatable {
     public function export_for_template(renderer_base $output) {
         global $CFG;
 
-        if ($this->audioonly) {
-            $aspect = '';
-            $style = 'height:100px';
-        } else {
-            $aspect = 'embed-responsive-16by9';
-            $style = '';
-        }
-
         $data = [
             'launchurl' => $this->launchurl,
-            'aspect' => $aspect,
-            'style' => $style,
+            'bs5' => helixmedia_is_moodle_5(),
+            'audioonly' => $this->audioonly,
         ];
         return $data;
     }

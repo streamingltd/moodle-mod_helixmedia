@@ -22,24 +22,25 @@
     Example context (json):
     {"thumblaunchurl": "-MEDIALURL-", "preid": "123", "text": "Something", "magnifiericon": true, "viewonly": true}
 }}
-<div class="helixmedia-border helixmedia-embed-size">
-    <div class="row">
-        <div class="col-sm-12"><div class="embed-responsive embed-responsive-16by9">
-            <iframe id="mod_helixmedia_thumbframe_{{preid}}" class="embed-responsive-item border-0" style="overflow: hidden;"
+<div class="helixmedia-border helixmedia-embed-size p-0 m-0 overflow-hidden">
+    <div class="row mb-0">
+        <div class="col-sm-12"><div class="{{#bs5}}ratio ratio-16x9{{/bs5}}{{^bs5}}embed-responsive embed-responsive-16by9{{/bs5}}">
+            <iframe id="mod_helixmedia_thumbframe_{{preid}}" class="{{^bs5}}embed-responsive-item{{/bs5}} border-0 overflow-hidden"
             src="{{thumblaunchurl}}"></iframe>
         </div></div>
     </div>
-    <div class="row p-2">
+    <div class="row {{^bs5}}pl-2 pr-2{{/bs5}}{{#bs5}}ps-2 pe-2{{/bs5}} pb-2">
         <div class="col-sm-12">
-            <a id="helixmedia_ltimodal_{{preid}}" href="#" data-toggle='modal' data-target='#mod_helixmedia_modal_{{preid}}' class="helixmedia_ltimodal_link">
+            <a id="helixmedia_ltimodal_{{preid}}" href="#" data-{{#bs5}}bs-{{/bs5}}toggle='modal' data-{{#bs5}}bs-{{/bs5}}target='#mod_helixmedia_modal_{{preid}}'
+                class="helixmedia_ltimodal_link">
                 <div class="container helixmedia_ltimodal_wrapper"><div class="row flex align-items-center helixmedia_ltimodal">
-                    <div class="col text-center helixmedia_ltimodal_text text-nowrap">{{text}}</div>
+                    <div class="col text-center helixmedia_ltimodal_text text-nowrap helixmedia_fittext">{{text}}</div>
                     <div class="col-auto text-right">
                         {{#magnifiericon}}
-                             <svg height="32" width="32"><svg x="0" y="0"><path d="M29.947,25.809l-5.432-5.432c-0.443-0.443-1.164-0.443-1.607,0l-3.268-3.297c1.416-1.597,2.457-3.729,2.457-6.031C22.098,6.052,18.047,2,13.049,2C8.051,2,4,6.052,4,11.049c0,4.998,4.051,9.049,9.049,9.049c1.799,0,3.583-0.613,4.992-1.518l3.259,3.404c-0.444,0.445-0.444,1.164,0,1.609l5.433,5.432c0.443,0.443,1.164,0.443,1.607,0l1.607-1.607C30.393,26.973,30.393,26.254,29.947,25.809zM12.97,16.92c-3.324,0-6.018-2.756-6.018-6.08c0-3.324,2.694-6.019,6.018-6.019s6.143,2.694,6.143,6.019C19.113,14.164,16.294,16.92,12.97,16.92z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.96)" stroke-dasharray=""></path></svg></svg>
+                             <svg height="30" width="30"><svg x="0" y="0"><path d="M29.947,25.809l-5.432-5.432c-0.443-0.443-1.164-0.443-1.607,0l-3.268-3.297c1.416-1.597,2.457-3.729,2.457-6.031C22.098,6.052,18.047,2,13.049,2C8.051,2,4,6.052,4,11.049c0,4.998,4.051,9.049,9.049,9.049c1.799,0,3.583-0.613,4.992-1.518l3.259,3.404c-0.444,0.445-0.444,1.164,0,1.609l5.433,5.432c0.443,0.443,1.164,0.443,1.607,0l1.607-1.607C30.393,26.973,30.393,26.254,29.947,25.809zM12.97,16.92c-3.324,0-6.018-2.756-6.018-6.08c0-3.324,2.694-6.019,6.018-6.019s6.143,2.694,6.143,6.019C19.113,14.164,16.294,16.92,12.97,16.92z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.90)" stroke-dasharray=""></path></svg></svg>
                          {{/magnifiericon}}
                          {{#uploadicon}}
-                             <svg height="32" width="32"><svg x="0" y="0"><path d="M16.875,4.341l8.855,8.811C26.199,13.621,26.042,14,25.379,14h-5.378v6.8c0,0.662-0.537,1.199-1.2,1.199H13.2c-0.662,0-1.199-0.537-1.199-1.199V14H6.622c-0.664,0-0.82-0.379-0.352-0.848l8.857-8.811C15.61,3.886,16.393,3.886,16.875,4.341z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.96)" stroke-dasharray=""></path></svg><svg x="0" y="0"><path d="M30,26.8c0,0.663-0.537,1.2-1.2,1.2H3.2C2.537,28,2,27.463,2,26.8v-4.2C2,22.293,2.297,22,2.6,22h2.8C5.703,22,6,22.293,6,22.6V24h20v-1.4c0-0.307,0.299-0.6,0.601-0.6h2.8c0.302,0,0.6,0.293,0.6,0.6V26.8z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.96) " stroke-dasharray=""></path></svg></svg>
+                             <svg height="30" width="30"><svg x="0" y="0"><path d="M16.875,4.341l8.855,8.811C26.199,13.621,26.042,14,25.379,14h-5.378v6.8c0,0.662-0.537,1.199-1.2,1.199H13.2c-0.662,0-1.199-0.537-1.199-1.199V14H6.622c-0.664,0-0.82-0.379-0.352-0.848l8.857-8.811C15.61,3.886,16.393,3.886,16.875,4.341z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.90)" stroke-dasharray=""></path></svg><svg x="0" y="0"><path d="M30,26.8c0,0.663-0.537,1.2-1.2,1.2H3.2C2.537,28,2,27.463,2,26.8v-4.2C2,22.293,2.297,22,2.6,22h2.8C5.703,22,6,22.293,6,22.6V24h20v-1.4c0-0.307,0.299-0.6,0.601-0.6h2.8c0.302,0,0.6,0.293,0.6,0.6V26.8z" stroke="none" stroke-width="0.5" fill="#000000" fill-opacity="1" transform="scale(0.90) " stroke-dasharray=""></path></svg></svg>
                          {{/uploadicon}}
                     </div>
                 </div></div>
