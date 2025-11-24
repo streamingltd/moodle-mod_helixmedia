@@ -2,7 +2,11 @@
 name: Moodle Plugin CI
 
 on:
-    workflow_dispatch:
+  push:
+    branches:
+        - master
+        - devfixes
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-24.04
