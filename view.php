@@ -32,8 +32,8 @@
  */
 
 require_once('../../config.php');
-require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 global $CFG, $PAGE;
 
@@ -44,7 +44,6 @@ $debug = optional_param('debuglaunch', 0, PARAM_INT);
 if ($l) { // Two ways to specify the module.
     $hmli = $DB->get_record('helixmedia', ['id' => $l], '*', MUST_EXIST);
     $cm = get_coursemodule_from_instance('helixmedia', $hmli->id, $hmli->course, false, MUST_EXIST);
-
 } else {
     $cm = get_coursemodule_from_id('helixmedia', $id, 0, false, MUST_EXIST);
     $hmli = $DB->get_record('helixmedia', ['id' => $cm->instance], '*', MUST_EXIST);
@@ -80,22 +79,14 @@ if ($launchcontainer == LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS) {
     $PAGE->set_pagelayout('incourse');
 }
 
-require_login($course);
+require_course_login($course, true, $cm);
+require_capability('mod/helixmedia:view', $context);
 
 helixmedia_view($hmli, $course, $cm, $context);
 
-$pagetitle = strip_tags($course->shortname.': '.format_string($hmli->name));
+$pagetitle = strip_tags($course->shortname . ': ' . format_string($hmli->name));
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($course->fullname);
-
-// Update_module_button has been deprecated, but since we don't show the admin block on this page we still need the
-// update button, so create it directly.
-
-if (has_capability('mod/helixmedia:addinstance', $context) && has_capability('moodle/course:manageactivities', $context)) {
-     $string = get_string('updatethis', '', get_string("modulename", "helixmedia"));
-     $url = new moodle_url("/course/mod.php", ['update' => $cm->id, 'return' => true, 'sesskey' => sesskey()]);
-     $PAGE->set_button($OUTPUT->single_button($url, $string));
-}
 
 // Print the page header.
 echo $OUTPUT->header();
@@ -109,23 +100,15 @@ if ($hmli->showdescriptionlaunch && $hmli->intro) {
     echo $OUTPUT->box($hmli->intro, 'generalbox description', 'intro');
 }
 
-if ( $launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW ) {
+if ($launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW) {
     $output = $PAGE->get_renderer('mod_helixmedia');
-    $disp = new \mod_helixmedia\output\viewwindow($launchurl->out(false), 0);
+    $disp = new \mod_helixmedia\output\viewwindow($launchurl->out(false), false);
     echo $output->render($disp);
 } else {
-    $size = helixmedia_get_instance_size($hmli->preid, $course->id);
-
-    if ($size->audioonly) {
-        $height = 100;
-    } else {
-        $height = 0;
-    }
-
+    $size = helixmedia_get_instance_size($hmli, $course->id);
     $output = $PAGE->get_renderer('mod_helixmedia');
-    $disp = new \mod_helixmedia\output\view($launchurl->out(true), $height);
+    $disp = new \mod_helixmedia\output\view($launchurl->out(true), $size->audioonly);
     echo $output->render($disp);
 }
 // Finish the page.
 echo $OUTPUT->footer();
-

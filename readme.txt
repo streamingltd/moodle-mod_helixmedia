@@ -1,4 +1,4 @@
-This is the MEDIAL activity plugin for Moodle 3.x and better.
+This is the MEDIAL activity plugin for Moodle 4.x and better.
 
 Installation
 ------------

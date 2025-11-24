@@ -30,7 +30,6 @@ namespace mod_helixmedia\task;
  * Cleanup task for HelixMedia.
  */
 class cleanup extends \core\task\scheduled_task {
-
     /**
      * Return the task's name as shown in admin screens.
      *
@@ -45,6 +44,11 @@ class cleanup extends \core\task\scheduled_task {
      */
     public function execute() {
         global $CFG, $DB;
+
+        // Cleanup old LTI 1.3 access tokens.
+        $DB->delete_records_select('helixmedia_access_tokens', 'validuntil < ?', [time()]);
+
+        // Cleanup resource link ID generation.
         $prerecs = $DB->get_records('helixmedia_pre');
 
         // If there is only one entry in the table, leave it alone regardless. This is needed to stop InnoDB from

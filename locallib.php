@@ -26,9 +26,13 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot.'/mod/lti/lib.php');
-require_once($CFG->dirroot.'/mod/lti/locallib.php');
-require_once($CFG->dirroot.'/lib/filelib.php');
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
+
+require_once($CFG->dirroot . '/mod/lti/lib.php');
+require_once($CFG->dirroot . '/mod/lti/locallib.php');
+require_once($CFG->dirroot . '/lib/filelib.php');
+
 
 // Activity types.
 define('HML_LAUNCH_NORMAL', 1);
@@ -68,6 +72,7 @@ define('HML_LAUNCH_LIB_ONLY', 18);
 
 // For version check.
 define('MEDIAL_MIN_VERSION', '8.5.000');
+define('MEDIAL_LTI13_MIN_VERSION', '9.0.000');
 
 /**
  * Checks to see if a course module is a group assignment
@@ -111,7 +116,6 @@ function helixmedia_get_assign_into_refs($assignid) {
     $pos = strpos($assignment->intro, "/mod/helixmedia/launch.php");
 
     while ($pos != false) {
-
         $l = strpos($assignment->intro, "l=", $pos);
 
         if ($l != false) {
@@ -140,14 +144,19 @@ function helixmedia_get_assign_into_refs($assignid) {
 function helixmedia_curl_post_launch_html($params, $endpoint) {
     global $CFG;
     $modconfig = get_config("helixmedia");
-    $params['oauth_consumer_key'] = $modconfig->consumer_key;
+    if ($modconfig->ltiversion === LTI_VERSION_1P3) {
+        $params['client_id'] = $modconfig->clientid;
+    } else {
+        $params['oauth_consumer_key'] = $modconfig->consumer_key;
+    }
 
     set_time_limit(0);
 
-    $cookiesfile = $CFG->dataroot.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR."helixmedia-curl-cookies-".microtime(true).".tmp";
+    $cookiesfile = $CFG->dataroot . DIRECTORY_SEPARATOR . "temp" . DIRECTORY_SEPARATOR . "helixmedia-curl-cookies-" .
+        microtime(true) . ".tmp";
     while (file_exists($cookiesfile)) {
-        $cookiesfile = $CFG->dataroot.DIRECTORY_SEPARATOR."temp".DIRECTORY_SEPARATOR.
-            "helixmedia-curl-cookies-".microtime(true).".tmp";
+        $cookiesfile = $CFG->dataroot . DIRECTORY_SEPARATOR . "temp" . DIRECTORY_SEPARATOR .
+            "helixmedia-curl-cookies-" . microtime(true) . ".tmp";
     }
 
     $curl = new \curl();
@@ -169,11 +178,11 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
         if ($r = $curl->get_raw_response()) {
-            return "<p>CURL Error connecting to MEDIAL: ".$r[0]."</p>".
-                "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+            return "<p>CURL Error connecting to MEDIAL: " . $r[0] . "</p>" .
+                "<p>" . get_string("version_check_fail", "helixmedia") . "</p>";
         } else {
-            return "<p>CURL Error connecting to MEDIAL: No response</p>".
-                "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+            return "<p>CURL Error connecting to MEDIAL: No response</p>" .
+                "<p>" . get_string("version_check_fail", "helixmedia") . "</p>";
         }
     }
 
@@ -185,177 +194,26 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
 }
 
 /**
- * This function builds the request that must be sent to the tool producer
- *
- * @param object    $instance       HML instance object
- * @param object    $typeconfig     HML tool configuration
- * @param object    $course         Course object
- * @param int       $type           The launch type
- * @param object    $user           User object if the launch isn't for the current user
- * @param boolean   $modtype          Set to true if we are in a modtype
- *
- * @return array    $request        Request details
- */
-function helixmedia_build_request($instance, $typeconfig, $course, $type, $user = null, $modtype = "") {
-    global $USER, $CFG;
-
-    if ($user == null) {
-        $user = $USER;
-    }
-
-    if (empty($instance->cmid)) {
-        $instance->cmid = 0;
-    }
-
-    // We need to always use CRLF line endings for LTI, otherwise the signature validation will fail.
-    // Moodle backup/restore sometimes converts the line endings to LF only.
-    // The Moodle core code uses a straight str_replace of \n with \r\n
-    // which won't cope properly with text where the line endings have been mixed up and \r only from the mac.
-    $intro = html_to_text($instance->intro);
-    $intro = preg_replace('/\r\n|\r|\n/', "\r\n", $intro);
-
-    $role = helixmedia_get_ims_role($user, $instance->cmid, $course->id, $type, $modtype);
-
-    $requestparams = [
-        'resource_link_id' => $instance->preid,
-        'resource_link_title' => $instance->name,
-        'resource_link_description' => substr($intro, 0, 1000),
-        'user_id' => $user->id,
-        'roles' => $role,
-        'context_id' => $course->id,
-        'context_label' => $course->shortname,
-        'context_title' => $course->fullname,
-        'launch_presentation_locale' => current_language(),
-    ];
-
-    $placementsecret = $instance->servicesalt;
-
-    if (isset($placementsecret)) {
-        $sourcedid = json_encode(lti_build_sourcedid($instance->id, $user->id, null, $placementsecret));
-    }
-
-    if (isset($placementsecret) &&
-         ($typeconfig['acceptgrades'] == LTI_SETTING_ALWAYS ||
-         ($typeconfig['acceptgrades'] == LTI_SETTING_DELEGATE && $instance->instructorchoiceacceptgrades == LTI_SETTING_ALWAYS ))) {
-        $requestparams['lis_result_sourcedid'] = $sourcedid;
-    }
-
-    // Send user's name and email data if appropriate.
-    if ( $typeconfig['sendname'] == LTI_SETTING_ALWAYS ||
-         ( $typeconfig['sendname'] == LTI_SETTING_DELEGATE && $instance->instructorchoicesendname == LTI_SETTING_ALWAYS ) ) {
-        $requestparams['lis_person_name_given'] = $user->firstname;
-        $requestparams['lis_person_name_family'] = $user->lastname;
-        $requestparams['lis_person_name_full'] = $user->firstname." ".$user->lastname;
-    }
-
-    if ( $typeconfig['sendemailaddr'] == LTI_SETTING_ALWAYS ||
-        ($typeconfig['sendemailaddr'] == LTI_SETTING_DELEGATE &&
-        $instance->instructorchoicesendemailaddr == LTI_SETTING_ALWAYS ) ) {
-        $requestparams['lis_person_contact_email_primary'] = $user->email;
-    }
-
-    // Concatenate the custom parameters from the administrator and the instructor
-    // Instructor parameters are only taken into consideration if the administrator
-    // has given permission.
-    $customstr = $typeconfig['customparameters'];
-
-    $instructorcustomstr = "";
-    $custom = [];
-    $instructorcustom = [];
-    if ($customstr) {
-        $custom = helix_split_custom_parameters($customstr);
-    }
-
-    if (isset($typeconfig['allowinstructorcustom']) && $typeconfig['allowinstructorcustom'] == LTI_SETTING_NEVER) {
-        $requestparams = array_merge($custom, $requestparams);
-    } else {
-        if ($instructorcustomstr) {
-            $instructorcustom = helix_split_custom_parameters($instructorcustomstr);
-        }
-        foreach ($instructorcustom as $key => $val) {
-            // Ignore the instructor's parameter.
-            if (!array_key_exists($key, $custom)) {
-                $custom[$key] = $val;
-            }
-        }
-        $requestparams = array_merge($custom, $requestparams);
-    }
-
-    // Make sure we let the tool know what LMS they are being called from.
-    $requestparams["ext_lms"] = "moodle-2";
-    $requestparams['tool_consumer_info_product_family_code'] = 'moodle';
-    $requestparams['tool_consumer_info_version'] = strval($CFG->version);
-
-    // Add oauth_callback to be compliant with the 1.0A spec.
-    $requestparams['oauth_callback'] = 'about:blank';
-
-    $requestparams['lti_version'] = 'LTI-1p0';
-    $requestparams['lti_message_type'] = 'hml-launch-request';
-
-    return $requestparams;
-}
-
-/**
  * Splits the custom parameters field to the various parameters
  *
  * @param string $customstr     String containing the parameters
  *
  * @return Array of custom parameters
  */
-function helix_split_custom_parameters($customstr) {
+function helixmedia_split_custom_parameters($customstr) {
     $lines = preg_split("/[\n;]/", $customstr);
     $retval = [];
     foreach ($lines as $line) {
         $pos = strpos($line, "=");
-        if ( $pos === false || $pos < 1 ) {
+        if ($pos === false || $pos < 1) {
             continue;
         }
         $key = trim(core_text::substr($line, 0, $pos));
         $val = trim(core_text::substr($line, $pos + 1, strlen($line)));
         $key = lti_map_keyname($key);
-        $retval['custom_'.$key] = $val;
+        $retval['custom_' . $key] = $val;
     }
     return $retval;
-}
-
-/**
- * Gets the IMS role string for the specified user and Helixmedia course module.
- *
- * @param mixed $user User object or user id
- * @param int $cmid The course module id of the LTI activity
- * @param int $courseid The course id
- * @param int $type The launch type
- * @param boolean $modtype Set to true if we are in a modtype
- *
- * @return string A role string suitable for passing with an LTI launch
- */
-function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
-    $roles = [];
-
-    $coursecontext = context_course::instance($courseid);
-    if (empty($cmid) || $cmid == -1) {
-        // If no cmid is passed, check if the user is a teacher in the course
-        // This allows other modules to programmatically "fake" a launch without
-        // a real Helixmedia instance.
-
-        if (has_capability('moodle/course:manageactivities', $coursecontext)) {
-            array_push($roles, 'Instructor');
-        } else {
-            array_push($roles, 'Learner');
-        }
-    } else {
-        if (has_capability('mod/helixmedia:manage', $coursecontext)) {
-            array_push($roles, 'Instructor');
-        } else {
-            array_push($roles, 'Learner');
-        }
-    }
-
-    if (is_siteadmin($user)) {
-        array_push($roles, 'urn:lti:sysrole:ims/lis/Administrator');
-    }
-
-    return join(',', $roles);
 }
 
 /**
@@ -366,7 +224,7 @@ function helixmedia_get_ims_role($user, $cmid, $courseid, $type, $modtype) {
  **/
 function helixmedia_get_visiblecap($modtype = false, $edtype = 'atto/helixatto') {
     if (!$modtype) {
-        return $edtype.':visible';
+        return $edtype . ':visible';
     }
 
     global $DB;
@@ -382,7 +240,7 @@ function helixmedia_get_visiblecap($modtype = false, $edtype = 'atto/helixatto')
     for ($i = 0; $i < count($types); $i++) {
         $types[$i] = trim($types[$i]);
         if (strlen($types[$i]) > 0 && $types[$i] == $modtype && $DB->get_record('modules', ['name' => $types[$i]])) {
-            return $edtype.':visiblemodtype';
+            return $edtype . ':visiblemodtype';
         }
     }
 
@@ -401,23 +259,40 @@ function curpageurl() {
 
     $pageurl .= "://";
     if ($_SERVER["SERVER_PORT"] != "80") {
-        $pageurl .= $_SERVER["SERVER_NAME"].":".$_SERVER["SERVER_PORT"].$_SERVER["REQUEST_URI"];
+        $pageurl .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . $_SERVER["REQUEST_URI"];
     } else {
-        $pageurl .= $_SERVER["SERVER_NAME"].$_SERVER["REQUEST_URI"];
+        $pageurl .= $_SERVER["SERVER_NAME"] . $_SERVER["REQUEST_URI"];
     }
     return $pageurl;
 }
 
 /**
  * Gets the launch instance size information
- * @param int $preid Resource link ID
+ * @param object $hmli HMLI instance
  * @param int $course The Course id
  * @return object containing size information
  */
-function helixmedia_get_instance_size($preid, $course) {
+function helixmedia_get_instance_size($hmli, $course) {
     global $CFG;
+
+    if (isset($hmli->custom)) {
+        // If this is LTI 1.3 we might have custom information that tells us this in the DB.
+        $custom = json_decode($hmli->custom);
+        if ($custom && property_exists($custom, 'audioonly')) {
+            // All new embeds are responsive, so we don't have the width/height in the data, so set responsive sizes.
+            $custom->width = 0;
+            $custom->height = 0;
+            if (strtolower($custom->audioonly) == "true") {
+                $custom->audioonly = true;
+            } else {
+                $custom->audioonly = false;
+            }
+            return $custom;
+        }
+    }
+
     $url = helixmedia_get_playerwidthurl();
-    $retdata = helixmedia_curl_post_launch_html(["context_id" => $course, "resource_link_id" => $preid,
+    $retdata = helixmedia_curl_post_launch_html(["context_id" => $course, "resource_link_id" => $hmli->preid,
         "include_height" => "Y"], $url);
 
     $parts = explode(":", $retdata);
@@ -452,9 +327,13 @@ function helixmedia_get_playerwidthurl() {
 
 /**
  * Gets the URL to use for session status queries
- * @return string url
+ * @return string url or false if we don't want to use session status
  */
 function helixmedia_get_status_url() {
+    if (get_config("helixmedia", "ltiversion") == LTI_VERSION_1P3) {
+        // LTI 1.3 doesn't use session status calls because we don't have a resource link id for new resources.
+        return false;
+    }
     return helixmedia_get_alturl("SessionStatus");
 }
 
@@ -466,15 +345,32 @@ function helixmedia_get_upload_url() {
     return helixmedia_get_alturl("UploadStatus");
 }
 
+
 /**
  * Gets an LTI URL with /Launch substituted
  * @param string $alt The string to substitute
  * @return string url
  */
 function helixmedia_get_alturl($alt) {
-    $statusurl = trim(get_config("helixmedia", "launchurl"));
-    $pos = helixmedia_str_contains(strtolower($statusurl), "/launch", true);
-    return substr($statusurl, 0, $pos).$alt;
+    $url = trim(get_config("helixmedia", "launchurl"));
+    if (get_config("helixmedia", "ltiversion") == LTI_VERSION_1P3) {
+        return $url . '/LtiAdv/' . $alt;
+    }
+    $pos = helixmedia_str_contains(strtolower($url), "/launch", true);
+    return substr($url, 0, $pos) . $alt;
+}
+
+/**
+ * Gets the LTI launch URL
+ * @return URL string
+ **/
+function helixmedial_launch_url() {
+    $url = trim(get_config("helixmedia", "launchurl"));
+    if (get_config("helixmedia", "ltiversion") == LTI_VERSION_1P3) {
+        return $url . '/LtiAdv/Tool/' . trim(get_config("helixmedia", "guid"));
+    }
+
+    return $url;
 }
 
 /**
@@ -500,8 +396,10 @@ function helixmedia_is_preid_empty($preid, $as, $userid) {
 function helixmedia_get_media_status($preid, $userid, $statusonly = false) {
     global $CFG;
 
-    $retdata = helixmedia_curl_post_launch_html(["resource_link_id" => $preid, "user_id" => $userid, "json" => "Y"],
-        helixmedia_get_upload_url());
+    $retdata = helixmedia_curl_post_launch_html(
+        ["resource_link_id" => $preid, "user_id" => $userid, "json" => "Y"],
+        helixmedia_get_upload_url()
+    );
 
     // We got a 404, the MEDIAL server doesn't support this call, so return false.
     // The old method was to check for the presence of a resource link ID so this is consistent.
@@ -557,10 +455,17 @@ function helixmedia_str_contains($haystack, $needle, $ignorecase = false) {
 function helixmedia_version_check() {
     $statusurl = trim(get_config("helixmedia", "launchurl"));
     if (strlen($statusurl) == 0) {
-        return "<p>".get_string("version_check_not_done", "helixmedia")."</p>";
+        return "<p>" . get_string("version_check_not_done", "helixmedia") . "</p>";
     }
+
+    // Detected the correct version URL based on the launch URL rather than version specified so it works when
+    // there is a mis-match.
     $pos = helixmedia_str_contains(strtolower($statusurl), "/lti/launch", true);
-    $endpoint = substr($statusurl, 0, $pos)."/version.txt";
+    if (!$pos) {
+        $endpoint = $statusurl . '/Version.txt';
+    } else {
+        $endpoint = substr($statusurl, 0, $pos) . "/Version.txt";
+    }
 
     $curl = new \curl();
     $curl->setopt([
@@ -577,25 +482,56 @@ function helixmedia_version_check() {
     $result = $curl->get($endpoint);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
-        return "<p>CURL Error connecting to MEDIAL: url:".$endpoint.", response is '".$result."'</p>".
-              "<p>".get_string("version_check_fail", "helixmedia")."</p>";
+        return "<p>CURL Error connecting to MEDIAL: url:" . $endpoint . ", response is '" . $result . "'</p>" .
+              "<p>" . get_string("version_check_fail", "helixmedia") . "</p>";
     }
 
     $v = new stdclass();
     $v->min = MEDIAL_MIN_VERSION;
     $v->actual = $result;
-    $message = "<p>".get_string('version_check_message', 'helixmedia', $v)."</p>";
+    $message = "<p>" . get_string('version_check_message', 'helixmedia', $v) . "</p>";
 
     $reqver = parse_medial_version(MEDIAL_MIN_VERSION);
+    $lti13reqver = parse_medial_version(MEDIAL_LTI13_MIN_VERSION);
     $actualver = parse_medial_version($result);
 
     set_config('medialversion', $actualver, "helixmedia");
 
     if ($actualver < $reqver) {
-        $message .= "<p class='warning'>".get_string('version_check_upgrade', 'helixmedia')."</p>";
+        $message .= "<p class='warning'>" . get_string('version_check_upgrade', 'helixmedia') . "</p>";
+    }
+
+    if ($actualver < $lti13reqver) {
+        set_config('lti13supported', false, "helixmedia");
+        $message .= "<p>Note: LTI 1.3 support requires MEDIAL version " . MEDIAL_LTI13_MIN_VERSION . "</p>";
+    } else {
+        set_config('lti13supported', true, "helixmedia");
     }
 
     return $message;
+}
+
+/**
+ * Gets the client id
+ * @return string
+ */
+function helixmedia_get_clientid() {
+    $clientid = get_config('helixmedia', 'clientid');
+    if (!$clientid) {
+        $clientid = random_string(15);
+        set_config('clientid', $clientid, 'helixmedia');
+    }
+    return $clientid;
+}
+
+/**
+ * Verifies the private key of a launch
+ * @return bool
+ */
+function helixmedia_verify_private_key() {
+    global $CFG;
+    require_once($CFG->dirroot . '/mod/lti/upgradelib.php');
+    return mod_lti_verify_private_key();
 }
 
 /**
@@ -620,7 +556,7 @@ function parse_medial_version($str) {
  */
 function helixmedia_legacy_dynamic_size($hmli, $c) {
     // This handles dynamic sizing of the launch frame.
-    $size = helixmedia_get_instance_size($hmli->preid, $c);
+    $size = helixmedia_get_instance_size($hmli, $c);
 
     if ($size->width == 0) {
         $ratio = 0.605;
@@ -628,13 +564,13 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
         if ($size->height == -1) {
             $ratio = 0.85;
         }
-        return "<script type=\"text/javascript\">\n".
-             "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');\n".
-             "if (vid != null) {\n".
-             "var h=parseInt(vid.parentElement.offsetWidth*".$ratio.");\n".
-             "vid.style.width='100%';\n".
-             "if (h>0) {vid.style.height=h+'px';}\n".
-             "}\n".
+        return "<script type=\"text/javascript\">\n" .
+             "var vid=parent.document.getElementById('hmlvid-" . $hmli->preid . "');\n" .
+             "if (vid != null) {\n" .
+             "var h=parseInt(vid.parentElement.offsetWidth*" . $ratio . ");\n" .
+             "vid.style.width='100%';\n" .
+             "if (h>0) {vid.style.height=h+'px';}\n" .
+             "}\n" .
              "</script>\n";
     } else {
         // If height is -1, use old size rules.
@@ -652,8 +588,8 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
             }
         } else {
             if ($size->audioonly) {
-                $w = $size->width."px";
-                $h = $size->height."px";
+                $w = $size->width . "px";
+                $h = $size->height . "px";
             } else {
                 $w = "380px";
                 $h = "340px";
@@ -669,12 +605,12 @@ function helixmedia_legacy_dynamic_size($hmli, $c) {
             }
         }
 
-        return "<script type=\"text/javascript\">\n".
-             "var vid=parent.document.getElementById('hmlvid-".$hmli->preid."');".
-             "if (vid != null) {\n".
-             "vid.style.width='".$w."';\n".
-             "vid.style.height='".$h."';\n".
-             "}\n".
+        return "<script type=\"text/javascript\">\n" .
+             "var vid=parent.document.getElementById('hmlvid-" . $hmli->preid . "');" .
+             "if (vid != null) {\n" .
+             "vid.style.width='" . $w . "';\n" .
+             "vid.style.height='" . $h . "';\n" .
+             "}\n" .
              "</script>\n";
     }
 }
@@ -694,7 +630,8 @@ function helixmedia_detect_assign_grading_view($url) {
     $query = explode('&', $url['query']);
 
     // These three actions equate to a tutor viewing a submission.
-    if (strpos($url['query'], 'action=viewpluginassignsubmission') !== false ||
+    if (
+        strpos($url['query'], 'action=viewpluginassignsubmission') !== false ||
         strpos($url['query'], 'action=grading') !== false ||
         strpos($url['query'], 'action=grader') !== false
     ) {
@@ -714,4 +651,364 @@ function helixmedia_is_moodle_5() {
     } else {
         return false;
     }
+}
+
+/**
+ * Gets the auth capability to use
+ * @param int $type Launch type
+ * @param int $courseid
+ * @param string $modtype
+ * @return The capability or null if not found
+ */
+function helixmedia_auth_capability($type, $courseid, $modtype) {
+    switch ($type) {
+        case HML_LAUNCH_NORMAL:
+        case HML_LAUNCH_THUMBNAILS:
+        case HML_LAUNCH_TINYMCE_VIEW:
+        case HML_LAUNCH_ATTO_VIEW:
+        case HML_LAUNCH_VIEW_FEEDBACK:
+        case HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS:
+            if ($courseid == SITEID) {
+                return 'mod/helixmedia:myview';
+            } else {
+                return 'mod/helixmedia:view';
+            }
+        case HML_LAUNCH_EDIT:
+            return 'mod/helixmedia:addinstance';
+        case HML_LAUNCH_TINYMCE_EDIT:
+            return helixmedia_get_visiblecap($modtype, 'tiny/medial');
+        case HML_LAUNCH_ATTO_EDIT:
+            return helixmedia_get_visiblecap($modtype);
+        case HML_LAUNCH_STUDENT_SUBMIT:
+        case HML_LAUNCH_STUDENT_SUBMIT_PREVIEW:
+        case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
+            return 'mod/assign:submit';
+        case HML_LAUNCH_VIEW_SUBMISSIONS:
+        case HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS:
+        case HML_LAUNCH_FEEDBACK:
+        case HML_LAUNCH_FEEDBACK_THUMBNAILS:
+            return 'mod/assign:grade';
+        case HML_LAUNCH_LIB_ONLY:
+            if ($courseid == SITEID) {
+                return 'mod/helixmedia:myview';
+            } else {
+                return 'mod/helixmedia:view';
+            }
+    }
+    return null;
+}
+
+
+/** LTI 1.3 specific stuff, modified from mod_lti **/
+
+/**
+ * Verifies the JWT signature of an incoming message.
+ *
+ * @param stdclass $tool The tool config
+ * @param string $clientid The client id.
+ * @param string $jwtparam JWT parameter value.
+ * @return true if the key validates
+ * @throws moodle_exception
+ * @throws UnexpectedValueException     Provided JWT was invalid
+ * @throws SignatureInvalidException    Provided JWT was invalid because the signature verification failed
+ * @throws BeforeValidException         Provided JWT is trying to be used before it's eligible as defined by 'nbf'
+ * @throws BeforeValidException         Provided JWT is trying to be used before it's been created as defined by 'iat'
+ * @throws ExpiredException             Provided JWT has since expired, as defined by the 'exp' claim
+ */
+function helixmedia_verify_jwt_signature($tool, $clientid, $jwtparam) {
+    $key = $tool->clientid ?? '';
+
+    if ($clientid !== $key) {
+        throw new moodle_exception('errorincorrectconsumerkey', 'mod_lti');
+    }
+
+    $keyseturl = $tool->launchurl . '/LtiAdv/JWK/' . $tool->guid;
+    lti_verify_with_keyset($jwtparam, $keyseturl, $clientid);
+    return true;
+}
+
+/**
+ * Gets the permissable scopes for MEDIAL LTI tokens
+ * @return An array of scopes
+ **/
+function helixmedia_get_permitted_service_scopes() {
+    return ['https://purl.imsglobal.org/spec/lti-ags/scope/score'];
+}
+
+/**
+ * Create a new access token.
+ *
+ * @param string[] $scopes Scopes permitted for new token
+ *
+ * @return stdClass Access token
+ */
+function helixmedia_new_access_token($scopes) {
+    global $DB;
+
+    // Make sure the token doesn't exist (even if it should be almost impossible with the random generation).
+    $numtries = 0;
+    do {
+        $numtries++;
+        $generatedtoken = md5(uniqid(rand(), 1));
+        if ($numtries > 5) {
+            throw new moodle_exception('Failed to generate MEDIAL LTI access token');
+        }
+    } while ($DB->record_exists('helixmedia_access_tokens', ['token' => $generatedtoken]));
+    $newtoken = new stdClass();
+    $newtoken->scope = json_encode(array_values($scopes));
+    $newtoken->token = $generatedtoken;
+
+    $newtoken->timecreated = time();
+    $newtoken->validuntil = $newtoken->timecreated + LTI_ACCESS_TOKEN_LIFE;
+    $newtoken->lastaccess = null;
+
+    $DB->insert_record('helixmedia_access_tokens', $newtoken);
+
+    return $newtoken;
+}
+
+/**
+ *
+ * @param string[] $scopes  Array of scopes which give permission for the current request.
+ *
+ * @return string|int|boolean  The OAuth consumer key, the LTI type ID for the validated bearer token,
+                               true for requests not requiring a scope, otherwise false.
+ */
+function helixmedia_get_oauth_key_from_headers($scopes = null) {
+    global $DB, $CFG;
+    require_once($CFG->dirroot . '/mod/lti/OAuth.php');
+    $now = time();
+
+    $requestheaders = \moodle\mod\lti\OAuthUtil::get_headers();
+
+    if (isset($requestheaders['Authorization'])) {
+        if (substr($requestheaders['Authorization'], 0, 6) == "OAuth ") {
+            $headerparameters = OAuthUtil::split_header($requestheaders['Authorization']);
+
+            return format_string($headerparameters['oauth_consumer_key']);
+        } else if (empty($scopes)) {
+            return true;
+        } else if (substr($requestheaders['Authorization'], 0, 7) == 'Bearer ') {
+            $tokenvalue = trim(substr($requestheaders['Authorization'], 7));
+            $conditions = ['token' => $tokenvalue];
+
+            $token = $DB->get_record('helixmedia_access_tokens', $conditions);
+            if ($token) {
+                // Log token access.
+                $DB->set_field('helixmedia_access_tokens', 'lastaccess', $now, ['id' => $token->id]);
+                $permittedscopes = json_decode($token->scope);
+                if ((intval($token->validuntil) > $now) && !empty(array_intersect($scopes, $permittedscopes))) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * Gets the valid redirect URIs
+ * @return array of URIs
+ **/
+function helixmedia_redirect_urls() {
+    return [helixmedial_launch_url()];
+}
+
+
+/**
+ * Return the mapping for standard message parameters to JWT claim.
+ *
+ * @return array
+ */
+function helixmedia_get_jwt_claim_mapping() {
+    $mappings = lti_get_jwt_claim_mapping();
+    // The data claim mapping for a deep linking is missing from the default mappings, perhaps because Moodle doesn't use it.
+    // MEDIAL uses this to echo back important data so we know what to do at the end of content selection, so add it in so we can
+    // read it.
+    $mappings['dl-data'] = ['suffix' => 'dl', 'group' => '', 'claim' => 'data', 'isarray' => false];
+    return $mappings;
+}
+
+/**
+ * Verfies the JWT and converts its claims to their equivalent message parameter.
+ *
+ * @param string $jwtparam   JWT parameter
+ *
+ * @return array  message parameters
+ * @throws moodle_exception
+ */
+function helixmedia_convert_from_jwt($jwtparam) {
+    $params = [];
+    $parts = explode('.', $jwtparam);
+    $ok = (count($parts) === 3);
+    if ($ok) {
+        $payload = JWT::urlsafeB64Decode($parts[1]);
+        $claims = json_decode($payload, true);
+        $ok = !is_null($claims) && !empty($claims['iss']);
+    }
+
+    if ($ok) {
+        $toolconfig = get_config('helixmedia');
+        helixmedia_verify_jwt_signature($toolconfig, $claims['iss'], $jwtparam);
+        $params['oauth_consumer_key'] = $claims['iss'];
+        foreach (helixmedia_get_jwt_claim_mapping() as $key => $mapping) {
+            $claim = LTI_JWT_CLAIM_PREFIX;
+            if (!empty($mapping['suffix'])) {
+                $claim .= "-{$mapping['suffix']}";
+            }
+            $claim .= '/claim/';
+            if (is_null($mapping['group'])) {
+                $claim = $mapping['claim'];
+            } else if (empty($mapping['group'])) {
+                $claim .= $mapping['claim'];
+            } else {
+                $claim .= $mapping['group'];
+            }
+
+            if (isset($claims[$claim])) {
+                $value = null;
+                if (empty($mapping['group'])) {
+                    $value = $claims[$claim];
+                } else {
+                    $group = $claims[$claim];
+                    if (is_array($group) && array_key_exists($mapping['claim'], $group)) {
+                        $value = $group[$mapping['claim']];
+                    }
+                }
+                if (!empty($value) && $mapping['isarray']) {
+                    if (is_array($value)) {
+                        if (is_array($value[0])) {
+                            $value = json_encode($value);
+                        } else {
+                            $value = implode(',', $value);
+                        }
+                    }
+                }
+                if (!is_null($value) && is_string($value) && (strlen($value) > 0)) {
+                    $params[$key] = $value;
+                }
+            }
+            $claim = LTI_JWT_CLAIM_PREFIX . '/claim/custom';
+            if (isset($claims[$claim])) {
+                $custom = $claims[$claim];
+                if (is_array($custom)) {
+                    foreach ($custom as $key => $value) {
+                        $params["custom_{$key}"] = $value;
+                    }
+                }
+            }
+            $claim = LTI_JWT_CLAIM_PREFIX . '/claim/ext';
+            if (isset($claims[$claim])) {
+                $ext = $claims[$claim];
+                if (is_array($ext)) {
+                    foreach ($ext as $key => $value) {
+                        $params["ext_{$key}"] = $value;
+                    }
+                }
+            }
+        }
+    }
+
+    if (isset($params['content_items'])) {
+        $params['content_items'] = lti_convert_content_items($params['content_items']);
+    }
+    $messagetypemapping = lti_get_jwt_message_type_mapping();
+    if (isset($params['lti_message_type']) && array_key_exists($params['lti_message_type'], $messagetypemapping)) {
+        $params['lti_message_type'] = $messagetypemapping[$params['lti_message_type']];
+    }
+    return $params;
+}
+
+
+/**
+ * Processes the tool provider's response to the ContentItemSelectionRequest and builds the configuration data from the
+ * selected content item. This configuration data can be then used when adding a tool into the course.
+ *
+ * @param string $messagetype The value for the lti_message_type parameter.
+ * @param string $consumerkey The consumer key.
+ * @param string $contentitemsjson The JSON string for the content_items parameter.
+ * @return stdClass The array of module information objects.
+ * @throws moodle_exception
+ * @throws lti\OAuthException
+ */
+function helixmedia_process_content_item($messagetype, $consumerkey, $contentitemsjson) {
+    // Check lti_message_type. Show debugging if it's not set to ContentItemSelection.
+    // No need to throw exceptions for now since lti_message_type does not seem to be used in this processing at the moment.
+    if ($messagetype !== 'ContentItemSelection') {
+        debugging(
+            "lti_message_type is invalid: {$messagetype}. It should be set to 'ContentItemSelection'.",
+            DEBUG_DEVELOPER
+        );
+    }
+
+    $items = json_decode($contentitemsjson);
+    if (empty($items)) {
+        throw new moodle_exception('errorinvaliddata', 'mod_lti', '', $contentitemsjson);
+    }
+    if (!isset($items->{'@graph'}) || !is_array($items->{'@graph'})) {
+        throw new moodle_exception('errorinvalidresponseformat', 'mod_lti');
+    }
+
+    $typeconfig = get_config('helixmedia');
+    if ($typeconfig->clientid != $consumerkey) {
+        throw new moodle_exception('invalidclientid', 'mod_helixmedia');
+    }
+
+    $items = $items->{'@graph'};
+
+    // MEDIAL only ever returns one item here.
+    if (count($items) == 0) {
+        return false;
+    }
+
+    return reset($items);
+}
+
+
+/**
+ * Initializes an array with the services supported by the LTI module
+ *
+ * @return array List of services
+ */
+function helixmedia_get_services() {
+    $services = [];
+    $services[] = new \mod_helixmedia\services\gradebookservices();
+    return $services;
+}
+
+/**
+ * Gets a token for access via the Moodle Mobile app
+ * @param int $cmid The Course module instance the token is for
+ * @param int $userid The user ID this is for
+ * @param int $courseid The course ID this is for
+ * @return array The token string and id
+ */
+function helixmedia_get_mobile_token($cmid, $userid, $courseid) {
+    global $DB;
+    $DB->delete_records("helixmedia_mobile", ['instance' => $cmid, 'userid' => $userid, 'course' => $courseid]);
+    $token = helixmedia_random_code(40);
+    $tokenid = $DB->insert_record("helixmedia_mobile", [
+        'instance' => $cmid,
+        'userid' => $userid,
+        'course' => $courseid,
+        'token' => $token,
+        'timecreated' => time(),
+        ]);
+
+    return [$token, $tokenid];
+}
+
+/**
+ * Generates a random code
+ * @param int $length The number of chars to return
+ * @return A string
+ */
+function helixmedia_random_code($length) {
+    $chars = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    $clen   = strlen($chars) - 1;
+    $id  = '';
+    for ($i = 0; $i < $length; $i++) {
+        $id .= $chars[mt_rand(0, $clen)];
+    }
+    return $id;
 }

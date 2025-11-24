@@ -16,8 +16,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot.'/course/moodleform_mod.php');
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/course/moodleform_mod.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 /**
  * This page contains the instance configuration form for the HML activity.
@@ -29,7 +29,6 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
  * @copyright  MEDIAL
  */
 class mod_helixmedia_mod_form extends moodleform_mod {
-
     /**
      * Defines the form
      */
@@ -67,9 +66,18 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         $mform->addElement('checkbox', 'showdescriptionlaunch', '&nbsp;', ' ' . get_string('display_description', 'lti'));
         $mform->addHelpButton('showdescriptionlaunch', 'display_description', 'lti');
 
+        if (get_config("helixmedia", "ltiversion") == LTI_VERSION_1P3) {
+            $mform->addElement('checkbox', 'addgrades', '&nbsp;', ' ' . get_string('addgrades', 'helixmedia'));
+        }
+
+        $mform->addElement('hidden', 'custom');
+        $mform->setType('custom', PARAM_RAW);
+
         $mform->addElement('static', 'choosemedia', get_string('choosemedia_title', 'mod_helixmedia'), '');
 
-        $this->standard_coursemodule_elements();
+        $features = ['groups' => false, 'groupings' => false, 'groupmembersonly ' => true,
+                          'outcomes' => false, 'gradecat' => false, 'idnumber' => false];
+        $this->standard_coursemodule_elements($features);
         $this->add_action_buttons();
     }
 
@@ -81,25 +89,33 @@ class mod_helixmedia_mod_form extends moodleform_mod {
         $mform =& $this->_form;
         $pr =& $mform->getElement('preid');
         $ch =& $mform->getElement('choosemedia');
+        if (get_config("helixmedia", "ltiversion") == LTI_VERSION_1P3) {
+            $grade =& $mform->getElement('addgrades');
+        }
         $output = $PAGE->get_renderer('mod_helixmedia');
         if ($add) {
             $preid = helixmedia_preallocate_id();
             $pr->setValue($preid);
-            $disp = new \mod_helixmedia\output\modal($preid,
+            $disp = new \mod_helixmedia\output\modal(
+                $preid,
                 ['type' => HML_LAUNCH_THUMBNAILS, 'l' => $preid],
-                ['type' => HML_LAUNCH_EDIT, 'l' => $preid], true);
+                ['type' => HML_LAUNCH_EDIT, 'l' => $preid],
+                true
+            );
             $ch->setValue($output->render($disp));
         }
 
         if ($update) {
             $preid = helixmedia_get_preid($update);
             $pr->setValue($preid);
-            $disp = new \mod_helixmedia\output\modal($preid,
+            $disp = new \mod_helixmedia\output\modal(
+                $preid,
                 ['type' => HML_LAUNCH_THUMBNAILS, 'id' => $update],
-                ['type' => HML_LAUNCH_EDIT, 'id' => $update], true);
+                ['type' => HML_LAUNCH_EDIT, 'id' => $update],
+                true
+            );
             $ch->setValue($output->render($disp));
         }
         parent::definition_after_data();
     }
-
 }

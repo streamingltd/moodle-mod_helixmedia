@@ -28,7 +28,6 @@ use templatable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class launchmessage implements renderable, templatable {
-
     /**
      * @var The message we want to show
      */

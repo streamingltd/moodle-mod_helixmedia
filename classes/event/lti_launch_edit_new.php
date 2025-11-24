@@ -37,7 +37,6 @@ namespace mod_helixmedia\event;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class lti_launch_edit_new extends \core\event\base {
-
     /**
      * Init method.
      *
@@ -94,5 +93,4 @@ class lti_launch_edit_new extends \core\event\base {
             throw new \coding_exception('Context level must be CONTEXT_COURSE.');
         }
     }
-
 }

@@ -36,7 +36,7 @@
  * @return mixed True if module supports feature, false if not, null if doesn't know
  */
 function helixmedia_supports($feature) {
-    switch($feature) {
+    switch ($feature) {
         case FEATURE_GROUPS:
             return false;
         case FEATURE_GROUPINGS:
@@ -53,6 +53,12 @@ function helixmedia_supports($feature) {
             return true;
         case FEATURE_MOD_PURPOSE:
             return MOD_PURPOSE_CONTENT;
+        case FEATURE_GRADE_HAS_GRADE:
+        case FEATURE_GRADE_OUTCOMES:
+            if (get_config("helixmedia", "ltiversion") == LTI_VERSION_1P3) {
+                return true;
+            }
+            return false;
         default:
             return null;
     }
@@ -63,7 +69,7 @@ function helixmedia_supports($feature) {
  */
 function helixmedia_preallocate_id() {
     global $DB, $CFG;
-    require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+    require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
     $pre = new stdclass();
     $pre->timecreated = time();
@@ -76,7 +82,7 @@ function helixmedia_preallocate_id() {
     if ($pre->id == 1 && ($CFG->dbtype == "mariadb" || $CFG->dbtype == "mysqli")) {
         $val = 1;
         // Check the activity mod.
-        $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."helixmedia;";
+        $sql = "SELECT MAX(preid) AS preid FROM " . $CFG->prefix . "helixmedia;";
         $vala = $DB->get_record_sql($sql);
         if ($vala) {
             $val = $vala->preid;
@@ -84,7 +90,7 @@ function helixmedia_preallocate_id() {
         // Check the Submissions.
         $assigninstalled = $DB->get_records('assign_plugin_config', ['plugin' => 'helixassign']);
         if (count($assigninstalled) > 0) {
-            $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignsubmission_helixassign;";
+            $sql = "SELECT MAX(preid) AS preid FROM " . $CFG->prefix . "assignsubmission_helixassign;";
             $valb = $DB->get_record_sql($sql);
             if ($valb && $valb->preid > $val) {
                 $val = $valb->preid;
@@ -93,7 +99,7 @@ function helixmedia_preallocate_id() {
         // Check the Feedback.
         $feedinstalled = $DB->get_records('assign_plugin_config', ['plugin' => 'helixfeedback']);
         if (count($feedinstalled) > 0) {
-            $sql = "SELECT MAX(preid) AS preid FROM ".$CFG->prefix."assignfeedback_helixfeedback;";
+            $sql = "SELECT MAX(preid) AS preid FROM " . $CFG->prefix . "assignfeedback_helixfeedback;";
             $valc = $DB->get_record_sql($sql)->preid;
             if ($valc && $valc->preid > $val) {
                 $val = $valc->preid;
@@ -108,7 +114,7 @@ function helixmedia_preallocate_id() {
 
         $val = intval($val / 10) + 100;
 
-        $DB->execute("ALTER TABLE ".$CFG->prefix."helixmedia_pre AUTO_INCREMENT=".$val."");
+        $DB->execute("ALTER TABLE " . $CFG->prefix . "helixmedia_pre AUTO_INCREMENT=" . $val . "");
         $pre = new stdclass();
         $pre->timecreated = time();
         $pre->servicesalt = uniqid('', true);
@@ -142,14 +148,15 @@ function helixmedia_get_preid($cmid) {
  **/
 function helixmedia_add_instance($helixmedia, $mform) {
     global $DB, $CFG;
-    require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+    require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
     $prerec = $DB->get_record('helixmedia_pre', ['id' => $helixmedia->preid]);
 
     $helixmedia->timecreated = time();
     $helixmedia->timemodified = $helixmedia->timecreated;
-    $helixmedia->servicesalt = $prerec->servicesalt;
-
+    if (property_exists($prerec, 'servicesalt')) {
+        $helixmedia->servicesalt = $prerec->servicesalt;
+    }
     if (!isset($helixmedia->showtitlelaunch)) {
         $helixmedia->showtitlelaunch = 0;
     }
@@ -164,9 +171,12 @@ function helixmedia_add_instance($helixmedia, $mform) {
 
     $helixmedia->id = $DB->insert_record('helixmedia', $helixmedia);
 
-    $completiontimeexpected = !empty($helixmedia->completionexpected) ? $helixmedia->completionexpected : null;
-        \core_completion\api::update_completion_date_event($helixmedia->coursemodule, 'helixmedia',
-        $helixmedia->id, $completiontimeexpected);
+    if (property_exists($helixmedia, 'addgrades') && $helixmedia->addgrades) {
+        if (!isset($helixmedia->cmidnumber)) {
+            $helixmedia->cmidnumber = '';
+        }
+        helixmedia_grade_item_update($helixmedia);
+    }
 
     return $helixmedia->id;
 }
@@ -195,9 +205,12 @@ function helixmedia_update_instance($helixmedia, $mform) {
         $helixmedia->showdescriptionlaunch = 0;
     }
 
-    $completiontimeexpected = !empty($helixmedia->completionexpected) ? $helixmedia->completionexpected : null;
-        \core_completion\api::update_completion_date_event($helixmedia->coursemodule, 'helixmedia',
-        $helixmedia->id, $completiontimeexpected);
+    if (property_exists($helixmedia, 'addgrades') && $helixmedia->addgrades) {
+        helixmedia_grade_item_update($helixmedia);
+    } else {
+        // Instance is no longer accepting grades from Provider, set grade to "No grade" value 0.
+        helixmedia_grade_item_delete($helixmedia);
+    }
 
     return $DB->update_record('helixmedia', $helixmedia);
 }
@@ -217,7 +230,8 @@ function helixmedia_delete_instance($id) {
         return false;
     }
 
-    $result = true;
+    // Delete any dependent records here.
+    helixmedia_grade_item_delete($helixmedia);
 
     $DB->delete_records("helixmedia", ["id" => $helixmedia->id]);
     return true;
@@ -274,4 +288,69 @@ function helixmedia_view($hml, $course, $cm, $context, $user = null) {
 
     $completion = new completion_info($course);
     $completion->set_module_viewed($cm);
+}
+
+/**
+ * Create grade item for given hmli
+ *
+ * @category grade
+ * @param object $hmli object with extra cmidnumber
+ * @param mixed $grades optional array/object of grade(s); 'reset' means reset grades in gradebook
+ * @return int 0 if ok, error code otherwise
+ */
+function helixmedia_grade_item_update($hmli, $grades = null) {
+    global $CFG;
+    require_once($CFG->libdir . '/gradelib.php');
+
+    if (!$hmli->addgrades) {
+        return 0;
+    }
+
+    $params = ['itemname' => $hmli->name, 'idnumber' => $hmli->cmidnumber];
+
+    $custom = json_decode($hmli->custom);
+    if (!property_exists($custom, 'is_quiz') || strtolower($custom->is_quiz) != "true") {
+        return 0;
+    }
+
+    $params['gradetype'] = GRADE_TYPE_VALUE;
+    $params['grademax']  = intval($custom->max_score);
+    $params['grademin']  = 0;
+
+    if ($grades === 'reset') {
+        $params['reset'] = true;
+        $grades = null;
+    }
+
+    return grade_update('mod/helixmedia', $hmli->course, 'mod', 'helixmedia', $hmli->id, 0, $grades, $params);
+}
+
+/**
+ * Update activity grades
+ *
+ * @param stdClass $hmli The HML instance
+ * @param int      $userid Specific user only, 0 means all.
+ * @param bool     $nullifnone Not used
+ */
+function helixmedia_update_grades($hmli, $userid = 0, $nullifnone = true) {
+    global $CFG;
+    require_once($CFG->dirroot . '/mod/lti/servicelib.php');
+    // MEDIAL doesn't have its own grade table so the only thing to do is update the grade item.
+    if ($hmli->addgrades) {
+        lti_grade_item_update($hmli);
+    }
+}
+
+/**
+ * Delete grade item for given basiclti
+ *
+ * @category grade
+ * @param object $hmli object
+ * @return object hmli
+ */
+function helixmedia_grade_item_delete($hmli) {
+    global $CFG;
+    require_once($CFG->libdir . '/gradelib.php');
+
+    grade_update('mod/helixmedia', $hmli->course, 'mod', 'helixmedia', $hmli->id, 0, null, ['deleted' => 1]);
 }

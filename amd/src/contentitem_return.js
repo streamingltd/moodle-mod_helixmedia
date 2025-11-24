@@ -1,4 +1,3 @@
-<?php
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -15,29 +14,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The mod_helixmedia course module viewed event.
- *
- * @package    mod_helixmedia
- * @copyright  2015 Streaming LTD
+ * @package
+ * @copyright  2025 Tim Williams Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace mod_helixmedia\event;
+define([], function() {
+    var module = {};
 
-/**
- * The mod_helixmedia course module viewed event class.
- *
- * @package    mod_helixmedia
- * @copyright  2015 Streaming LTD
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class course_module_viewed extends \core\event\course_module_viewed {
-    /**
-     * Init method.
-     */
-    protected function init() {
-        $this->data['crud'] = 'r';
-        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
-        $this->data['objecttable'] = 'helixmedia';
-    }
-}
+    module.init = function(itemdata, origin) {
+        window.parent.postMessage(itemdata, origin);
+    };
+
+    return module;
+});

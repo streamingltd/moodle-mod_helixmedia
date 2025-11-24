@@ -25,12 +25,13 @@
 
 namespace mod_helixmedia\event;
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 /**
  * LTI Launch Event
  *
  * Class for event to be triggered when a course module is viewed with legacy log compatibility.
+ * Note this class is only used in Moodle 4.1 and lower
  *
  * @package    mod_helixmedia
  * @since      Moodle 2.7
@@ -39,14 +40,13 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class lti_compat_launch extends lti_launch {
-
     /**
      * Return the legacy event log data.
      *
      * @return array|null
      */
     protected function get_legacy_logdata() {
-        return [$this->courseid, $this->objecttable, 'launch', 'launch.php?id=' . $this->contextinstanceid .'&type=' .
+        return [$this->courseid, $this->objecttable, 'launch', 'launch.php?id=' . $this->contextinstanceid . '&type=' .
             HML_LAUNCH_NORMAL, $this->objectid, $this->contextinstanceid];
     }
 }

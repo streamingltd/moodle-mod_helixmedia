@@ -29,7 +29,6 @@
  * Define the complete assignment structure for backup, with file and id annotations
  */
 class backup_helixmedia_activity_structure_step extends backup_activity_structure_step {
-
     /**
      * Define the backup structure
      * @return backup_nested_element
@@ -54,8 +53,7 @@ class backup_helixmedia_activity_structure_step extends backup_activity_structur
             'showdescriptionlaunch',
             'icon',
             'secureicon',
-            ]
-        );
+            ]);
 
         // Build the tree.
 

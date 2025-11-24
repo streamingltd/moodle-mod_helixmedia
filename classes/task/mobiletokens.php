@@ -30,7 +30,6 @@ namespace mod_helixmedia\task;
  * Cleanup task for HelixMedia;
  */
 class mobiletokens extends \core\task\scheduled_task {
-
     /**
      * Return the task's name as shown in admin screens.
      *
@@ -46,6 +45,6 @@ class mobiletokens extends \core\task\scheduled_task {
     public function execute() {
         global $DB;
         $dayago = time() - (24 * 60 * 60);
-        $DB->delete_records_select("helixmedia_mobile", "timecreated < ".$dayago);
+        $DB->delete_records_select("helixmedia_mobile", "timecreated < " . $dayago);
     }
 }

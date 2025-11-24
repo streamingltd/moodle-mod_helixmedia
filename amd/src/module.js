@@ -29,20 +29,77 @@ define(['jquery'], function($) {
         var minst = {};
         minst.params = params;
         minst.params.gotIn = false;
+
         minst.params.medialInterval = false;
+        minst.params.videoref = '';
 
         minst.openmodal = function(evt) {
             evt.preventDefault();
-            $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', minst.params.launchurl);
+
+            var lu = minst.params.launchurl;
+            if (minst.params.videorref !== '') {
+                lu = lu + "&video_ref=" + minst.params.videoref;
+            }
+            $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', lu);
             if (!minst.params.bs5) {
                 $('.modal-backdrop').css('position', 'relative');
             }
-            $('.modal-backdrop').css('z-index', '0');
 
+            $('.modal-backdrop').css('z-index', '0');
             if (minst.params.doStatusCheck) {
-                setTimeout(minst.checkStatus, 5000);
+                if (minst.params.statusURL !== false) {
+                    setTimeout(minst.checkStatus, 500);
+                }
                 setTimeout(minst.maintainSession, minst.params.sessionFreq);
             }
+            window.addEventListener("message", minst.onmessage);
+        };
+
+        minst.onmessage = function(evt) {
+            if (evt.origin != minst.params.origin) {
+                /* eslint-disable-next-line no-console */
+                console.log("Message rejected: bad origin evt: " + evt.origin + " expected: " + minst.params.origin);
+                return;
+            }
+
+            var mform1 = document.getElementById("mform1");
+            if (mform1 === null) {
+                var elements = document.getElementsByClassName("mform");
+                mform1 = elements.item(0);
+            }
+
+            var name = mform1.elements.namedItem('name');
+            if (name !== null && name.value.length == 0) {
+                mform1.name.value = evt.data.title;
+            }
+
+            var custom = mform1.elements.namedItem('custom');
+            if (custom !== null) {
+                custom.value = JSON.stringify(evt.data.custom);
+            }
+
+            var hacustom = mform1.elements.namedItem('helixassign_custom');
+            if (hacustom !== null) {
+                hacustom.value = JSON.stringify(evt.data.custom);
+            }
+
+            var hfcustom = mform1.elements.namedItem('helixfeedback_custom');
+            if (hfcustom !== null) {
+                hfcustom.value = JSON.stringify(evt.data.custom);
+            }
+
+
+            var addgrades = mform1.elements.namedItem('addgrades');
+            if (addgrades !== null) {
+                if (evt.data.custom.is_quiz.toLowerCase() == "true") {
+                    addgrades.checked = true;
+                } else {
+                    addgrades.checked = false;
+                }
+            }
+
+            minst.params.videoref = evt.data.custom.video_ref;
+            setTimeout(minst.closeDialogue, 2000);
         };
 
         minst.textfit = function($) {
@@ -65,6 +122,7 @@ define(['jquery'], function($) {
         minst.closemodal = function() {
             if (minst.params.medialInterval != false) {
                 clearInterval(minst.params.medialInterval);
+                minst.params.medialInterval = false;
             }
 
             $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', '');
@@ -74,16 +132,15 @@ define(['jquery'], function($) {
             }
 
             var tframe = document.getElementById("mod_helixmedia_thumbframe_" + minst.params.docID);
-            if (tframe !== null && typeof (minst.params.thumburl) !== "undefined") {
-                tframe.contentWindow.location = minst.params.thumburl;
-            }
 
-            var mform1 = document.getElementById("mform1");
-            if (mform1 === null) {
-                var elements = document.getElementsByClassName("mform");
-                mform1 = elements[0];
-            }
+            if (tframe !== null && typeof (minst.params.thumburl) != "undefined") {
+                if (minst.params.videorref === '') {
+                    tframe.contentWindow.location = minst.params.thumburl;
+                } else {
+                    tframe.contentWindow.location = minst.params.thumburl + "&video_ref=" + minst.params.videoref;
+                }
 
+            }
         };
 
         minst.closeDialogue = function() {
@@ -103,6 +160,7 @@ define(['jquery'], function($) {
             $('#mod_helixmedia_closemodal_' + minst.params.docID).off();
             if (minst.params.medialInterval != false) {
                 clearInterval(minst.params.medialInterval);
+                minst.params.medialInterval = false;
             }
         };
 
@@ -119,11 +177,11 @@ define(['jquery'], function($) {
                 minst.params.gotIn = true;
             }
             if (responseText != "OUT" || minst.params.gotIn == false) {
+
                 if (minst.params.medialInterval == false) {
                     minst.params.medialInterval = setInterval(minst.checkStatus, 2000);
                 }
             } else {
-
                 if (minst.params.resDelay == 0) {
                     minst.closeDialogue();
                 } else {
@@ -146,7 +204,8 @@ define(['jquery'], function($) {
     };
 
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
-        sessionURL, sessionFreq, resDelay, extraID, title, library, bs5) {
+        sessionURL, sessionFreq, resDelay, extraID, title, library, origin, bs5) {
+
 
         // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.
@@ -170,7 +229,7 @@ define(['jquery'], function($) {
         params.resDelay = resDelay;
         params.docID = resID + extraID;
         params.bs5 = bs5;
-
+        params.origin = origin;
         var medialhandler = module.medialinstance($, params);
         module.instances[params.docID] = medialhandler;
         medialhandler.bind();

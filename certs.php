@@ -15,29 +15,20 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * The mod_helixmedia course module viewed event.
+ * This file returns an array of available public keys
  *
  * @package    mod_helixmedia
- * @copyright  2015 Streaming LTD
+ * @copyright  2025 Streaming Ltd
+ * @author     Tim Williams <tim@medial.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+use mod_lti\local\ltiopenid\jwks_helper;
 
-namespace mod_helixmedia\event;
+define('NO_DEBUG_DISPLAY', true);
+define('NO_MOODLE_COOKIES', true);
 
-/**
- * The mod_helixmedia course module viewed event class.
- *
- * @package    mod_helixmedia
- * @copyright  2015 Streaming LTD
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-class course_module_viewed extends \core\event\course_module_viewed {
-    /**
-     * Init method.
-     */
-    protected function init() {
-        $this->data['crud'] = 'r';
-        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
-        $this->data['objecttable'] = 'helixmedia';
-    }
-}
+require_once(__DIR__ . '/../../config.php');
+
+@header('Content-Type: application/json; charset=utf-8');
+
+echo json_encode(jwks_helper::get_jwks(), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);

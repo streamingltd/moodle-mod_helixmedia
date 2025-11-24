@@ -25,8 +25,8 @@
  */
 
 require_once("../../config.php");
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
-require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
 
 // Course module ID.
 $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
@@ -82,9 +82,6 @@ $userid = optional_param('userid', 0, PARAM_INT);
 // Launch type.
 $type = required_param('type', PARAM_INT);
 
-// Used for migration only.
-$mid  = optional_param('mid', -1, PARAM_INT);
-
 // Base64 encoded return URL.
 $ret  = optional_param('ret', "", PARAM_TEXT);
 
@@ -100,6 +97,9 @@ $modtype  = optional_param('modtype', "", PARAM_TEXT);
 // Check for responsive embeds with ATTO or TinyMCE.
 $responsive = optional_param('responsive', 0, PARAM_BOOL);
 
+// Video ref for thumbnail if we have selected a new video.
+$videoref = optional_param('video_ref', "", PARAM_TEXT);
+
 if (strlen($ret) > 0) {
     $ret = base64_decode($ret);
 }
@@ -109,8 +109,12 @@ $cmid = -1;
 $postscript = false;
 $legacyjsresize = false;
 
-if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_TINYMCE_VIEW ||
-    $type == HML_LAUNCH_ATTO_EDIT || $type == HML_LAUNCH_ATTO_VIEW || $type == HML_LAUNCH_LIB_ONLY) {
+$modconfig = get_config("helixmedia");
+
+if (
+    $l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_TINYMCE_VIEW ||
+    $type == HML_LAUNCH_ATTO_EDIT || $type == HML_LAUNCH_ATTO_VIEW || $type == HML_LAUNCH_LIB_ONLY
+) {
     // This means that we're doing a "fake" launch for a new instance or viewing via a link created in TinyMCE/ATTO.
 
     $hmli = new stdclass();
@@ -135,6 +139,7 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
 
     if ($type == HML_LAUNCH_TINYMCE_VIEW || $type == HML_LAUNCH_ATTO_VIEW) {
         if ((!$courseinc || !isloggedin()) && strpos($_SERVER['HTTP_USER_AGENT'], 'MoodleMobile') !== false) {
+            $PAGE->set_context(context_system::instance());
             $output = $PAGE->get_renderer('mod_helixmedia');
             $disp = new \mod_helixmedia\output\launchmessage(get_string('moodlemobile', 'helixmedia'));
             echo $output->render($disp);
@@ -157,6 +162,8 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
     $hmli->servicesalt = uniqid('', true);
     $hmli->icon = "";
     $hmli->secureicon = "";
+    $hmli->custom = null;
+    $hmli->addgrades = false;
 
     if ($aid) {
         $cm = get_coursemodule_from_id('assign', $aid, 0, false, MUST_EXIST);
@@ -218,9 +225,10 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
                 $hmli->name = get_string('assignfeedltititle', 'helixmedia', fullname($fuser));
                 $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
             } else {
+                $PAGE->set_context(context_system::instance());
                 $output = $PAGE->get_renderer('mod_helixmedia');
                 $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_launch', 'helixmedia'), 'error');
-                echo $output->render($disp). $type;
+                echo $output->render($disp) . $type;
                 exit(0);
             }
         }
@@ -233,12 +241,15 @@ if ($l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML
 
 // Is this a mobile app launch?
 $mobiletokenid = optional_param('mobiletokenid', 0, PARAM_INT);
-if ($mobiletokenid) {
+$mobiletoken = false;
+if ($mobiletokenid > 0) {
     $mobiletoken = required_param('mobiletoken', PARAM_TEXT);
     $tokenrecord = $DB->get_record('helixmedia_mobile', ['id' => $mobiletokenid]);
-    if (!$tokenrecord ||
+    if (
+        !$tokenrecord ||
         $tokenrecord->token != $mobiletoken ||
-        $tokenrecord->instance != $cm->id) {
+        $tokenrecord->instance != $cm->id
+    ) {
             $output = $PAGE->get_renderer('mod_helixmedia');
             $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_mobile_token', 'helixmedia'));
             echo $output->render($disp);
@@ -251,48 +262,7 @@ if ($mobiletokenid) {
 }
 
 // Do some permissions stuff.
-$cap = null;
-switch ($type) {
-    case HML_LAUNCH_NORMAL:
-    case HML_LAUNCH_THUMBNAILS:
-    case HML_LAUNCH_TINYMCE_VIEW:
-    case HML_LAUNCH_ATTO_VIEW:
-    case HML_LAUNCH_VIEW_FEEDBACK:
-    case HML_LAUNCH_VIEW_FEEDBACK_THUMBNAILS:
-        if ($course->id == SITEID) {
-            $cap = 'mod/helixmedia:myview';
-        } else {
-            $cap = 'mod/helixmedia:view';
-        }
-        break;
-    case HML_LAUNCH_EDIT:
-        $cap = 'mod/helixmedia:addinstance';
-        break;
-    case HML_LAUNCH_TINYMCE_EDIT:
-        $cap = helixmedia_get_visiblecap($modtype, 'tiny/medial');
-        break;
-    case HML_LAUNCH_ATTO_EDIT:
-        $cap = helixmedia_get_visiblecap($modtype);
-        break;
-    case HML_LAUNCH_STUDENT_SUBMIT:
-    case HML_LAUNCH_STUDENT_SUBMIT_PREVIEW:
-    case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
-        $cap = 'mod/assign:submit';
-        break;
-    case HML_LAUNCH_VIEW_SUBMISSIONS:
-    case HML_LAUNCH_VIEW_SUBMISSIONS_THUMBNAILS:
-    case HML_LAUNCH_FEEDBACK:
-    case HML_LAUNCH_FEEDBACK_THUMBNAILS:
-        $cap = 'mod/assign:grade';
-        break;
-    case HML_LAUNCH_LIB_ONLY:
-        if ($course->id == SITEID) {
-            $cap = 'mod/helixmedia:myview';
-        } else {
-            $cap = 'mod/helixmedia:view';
-        }
-        break;
-}
+$cap = helixmedia_auth_capability($type, $course->id, $modtype);
 
 if ($cap == null || !has_capability($cap, $context, $user)) {
     $output = $PAGE->get_renderer('mod_helixmedia');
@@ -301,17 +271,31 @@ if ($cap == null || !has_capability($cap, $context, $user)) {
     die;
 }
 
+// Sanity check to make sure we aren't using copied details because Moodle has been backed up.
+// This can cause DB corruption in MEDIAL.
+// for LTI 1.0 and will simply fail with LTI 1.3 because the URLs in the MEDIAL LtiSite will be wrong.
+
+if (!$modconfig->hosturl) {
+    set_config('hosturl', $CFG->wwwroot, 'helixmedia');
+} else {
+    if ($modconfig->hosturl != "ignorewww" && $modconfig->hosturl != $CFG->wwwroot) {
+        $output = $PAGE->get_renderer('mod_helixmedia');
+        $disp = new \mod_helixmedia\output\launchmessage(get_string('configproblem', 'helixmedia'));
+        echo $output->render($disp);
+        die;
+    }
+}
+
 $hmli->debuglaunch = 0;
-$modconfig = get_config("helixmedia");
-if ( ($modconfig->forcedebug && $modconfig->restrictdebug && is_siteadmin()) ||
-     ($modconfig->restrictdebug == false && $modconfig->forcedebug)) {
+if (
+    ($modconfig->forcedebug && $modconfig->restrictdebug && is_siteadmin()) ||
+     ($modconfig->restrictdebug == false && $modconfig->forcedebug)
+) {
     $hmli->debuglaunch = 1;
 }
 
-
 // Do the logging.
 if ($type == HML_LAUNCH_NORMAL || $type == HML_LAUNCH_EDIT) {
-
     // Moodle 4.2+ now emits a warning if legacy log methods are present in events.
     // So we don't have to split the code base use a sub class if we actually need legacy logging here.
     if ($CFG->version < 2023042400 && get_config('logstore_legacy', 'loglegacy') == 1) {
@@ -322,20 +306,20 @@ if ($type == HML_LAUNCH_NORMAL || $type == HML_LAUNCH_EDIT) {
 
     if ($type == HML_LAUNCH_EDIT) {
         if ($l) {
-            $cname = '\mod_helixmedia\event\lti_launch_edit'.$cname.'_new';
+            $cname = '\mod_helixmedia\event\lti_launch_edit' . $cname . '_new';
             $event = $cname::create([
                 'objectid' => $hmli->id,
                 'context' => $context,
             ]);
         } else {
-            $cname = '\mod_helixmedia\event\lti_launch'.$cname.'_edit';
+            $cname = '\mod_helixmedia\event\lti_launch' . $cname . '_edit';
             $event = $cname::create([
                 'objectid' => $hmli->id,
                 'context' => $context,
             ]);
         }
     } else {
-        $cname = '\mod_helixmedia\event\lti'.$cname.'_launch';
+        $cname = '\mod_helixmedia\event\lti' . $cname . '_launch';
         $event = $cname::create([
             'objectid' => $hmli->id,
             'context' => $context,
@@ -365,27 +349,42 @@ if ($type == HML_LAUNCH_NORMAL) {
     helixmedia_view($hmli, $course, $cm, $context, $user);
 }
 
+// Override custom_video_ref if we have an alternative one. This should only happen for thumbnails during content selection.
+if ($videoref !== '') {
+    $hmli->video_ref = $videoref;
+}
+
 $ishtmlassign = false;
 
 // Try to detect if this is an ATTO/TINY Launch where these plugins have been used with a text area for student submissions.
-if ($type == HML_LAUNCH_ATTO_EDIT ||
+if (
+    $type == HML_LAUNCH_ATTO_EDIT ||
     $type == HML_LAUNCH_TINYMCE_EDIT ||
     $type == HML_LAUNCH_ATTO_VIEW ||
-    $type == HML_LAUNCH_TINYMCE_VIEW) {
+    $type == HML_LAUNCH_TINYMCE_VIEW
+) {
     // If this is a tutor, check if we are grading. If we are they are looking at a student submission.
     if (has_capability('mod/assign:viewgrades', $context, $user)) {
         $ishtmlassign = helixmedia_detect_assign_grading_view($_SERVER['HTTP_REFERER']);
     }
 }
 
-$PAGE->requires->css('/mod/helixmedia/style/nunito.css');
-$PAGE->set_pagelayout('popup');
-$PAGE->set_url('/mod/helixmedia/view.php', ['id' => $hmli->id]);
-$PAGE->set_title('');
-$PAGE->set_heading('');
-
-echo $OUTPUT->header();
 $output = $PAGE->get_renderer('mod_helixmedia');
-$disp = new \mod_helixmedia\output\launcher($hmli, $type, $mid, $ret, $user, $modtype, $postscript, $legacyjsresize, $ishtmlassign);
+if ($modconfig->ltiversion === LTI_VERSION_1P3) {
+    $disp = new \mod_helixmedia\output\auth(
+        $hmli,
+        $modconfig,
+        $type,
+        $ret,
+        $user,
+        $modtype,
+        $legacyjsresize,
+        $ishtmlassign,
+        $mobiletokenid,
+        $mobiletoken,
+        $postscript
+    );
+} else {
+    $disp = new \mod_helixmedia\output\launcher($hmli, $type, $ret, $user, $modtype, $postscript, $legacyjsresize, $ishtmlassign);
+}
 echo $output->render($disp);
-echo $OUTPUT->footer();

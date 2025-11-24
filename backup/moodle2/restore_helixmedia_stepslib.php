@@ -27,13 +27,12 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
 
 /**
  * Structure step to restore one helixmedia activity
  */
 class restore_helixmedia_activity_structure_step extends restore_activity_structure_step {
-
     /**
      * Define the backup structure
      * @return restore_path_element

@@ -38,7 +38,6 @@ require_once("$CFG->libdir/externallib.php");
  * @since      Moodle 3.0
  */
 class mod_helixmedia_external extends external_api {
-
     /**
      * Defines the structure for the launch data parameters
      * @return array
@@ -62,15 +61,8 @@ class mod_helixmedia_external extends external_api {
     public static function get_launch_data($id, $userid, $course) {
         global $DB, $USER;
         $warnings = [];
-        $token = self::random_code(40);
 
-        $tokenid = $DB->insert_record("helixmedia_mobile", [
-            'instance' => $id,
-            'userid' => $userid,
-            'course' => $course,
-            'token' => $token,
-            'timecreated' => time()]
-        );
+        [$token, $tokenid] = helixmedia_get_mobile_token($id, $userid, $course);
 
         $result = [
             'id' => $tokenid,
@@ -88,7 +80,7 @@ class mod_helixmedia_external extends external_api {
      */
     private static function random_code($length) {
         $chars = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        $clen = strlen( $chars ) - 1;
+        $clen = strlen($chars) - 1;
         $id = '';
 
         for ($i = 0; $i < $length; $i++) {

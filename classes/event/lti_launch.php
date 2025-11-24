@@ -25,7 +25,7 @@
 
 namespace mod_helixmedia\event;
 defined('MOODLE_INTERNAL') || die();
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 /**
  * LTI Launch Event
@@ -39,7 +39,6 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class lti_launch extends \core\event\base {
-
     /**
      * Init method.
      *
@@ -76,8 +75,10 @@ class lti_launch extends \core\event\base {
      * @return \moodle_url
      */
     public function get_url() {
-        return new \moodle_url("/mod/$this->objecttable/launch.php",
-            ['id' => $this->contextinstanceid, 'type' => HML_LAUNCH_NORMAL]);
+        return new \moodle_url(
+            "/mod/$this->objecttable/launch.php",
+            ['id' => $this->contextinstanceid, 'type' => HML_LAUNCH_NORMAL]
+        );
     }
 
     /**

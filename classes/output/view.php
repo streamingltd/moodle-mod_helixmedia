@@ -21,7 +21,7 @@ use renderable;
 use renderer_base;
 use templatable;
 
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 /**
  * Container renderable class.
@@ -31,7 +31,6 @@ require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class view implements renderable, templatable {
-
     /**
      * @var The LTI launch URL
      */
@@ -69,6 +68,7 @@ class view implements renderable, templatable {
             'launchurl' => $this->launchurl,
             'bs5' => helixmedia_is_moodle_5(),
             'audioonly' => $this->audioonly,
+            'medialurl' => get_config("helixmedia", "launchurl"),
         ];
         return $data;
     }

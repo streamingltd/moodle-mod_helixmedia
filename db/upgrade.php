@@ -26,7 +26,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 /**
  * xmldb_helixmedia_upgrade is the function that upgrades
@@ -94,7 +94,6 @@ function xmldb_helixmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2023122001) {
-
         // Rename field userid on table helixmedia_mobile to NEWNAMEGOESHERE.
         $table = new xmldb_table('helixmedia_mobile');
         $field = new xmldb_field('user', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'instance');
@@ -106,6 +105,55 @@ function xmldb_helixmedia_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2023122001, 'helixmedia');
     }
 
+    if ($oldversion < 2025011601) {
+        $table = new xmldb_table('helixmedia_access_tokens');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null, null);
+        $table->add_field('scope', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL, null, null, 'id');
+        $table->add_field('token', XMLDB_TYPE_CHAR, '128', null, XMLDB_NOTNULL, null, null, 'scope');
+        $table->add_field('validuntil', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'token');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null, 'validuntil');
+        $table->add_field('lastaccess', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'timecreated');
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('token', XMLDB_INDEX_NOTUNIQUE, ['token']);
+
+        // Conditionally launch create table for helixmedia_mobile.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Helixmedia savepoint reached.
+        upgrade_mod_savepoint(true, 2025011601, 'helixmedia');
+    }
+
+    if ($oldversion < 2025012701) {
+        // Define field custom to be added to helixmedia.
+        $table = new xmldb_table('helixmedia');
+        $field = new xmldb_field('custom', XMLDB_TYPE_TEXT, null, null, null, null, null, 'secureicon');
+
+        // Conditionally launch add field custom.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Helixmedia savepoint reached.
+        upgrade_mod_savepoint(true, 2025012701, 'helixmedia');
+    }
+
+    if ($oldversion < 2025013001) {
+        // Define field addgrades to be added to helixmedia.
+        $table = new xmldb_table('helixmedia');
+        $field = new xmldb_field('addgrades', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'custom');
+
+        // Conditionally launch add field addgrades.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Helixmedia savepoint reached.
+        upgrade_mod_savepoint(true, 2025013001, 'helixmedia');
+    }
+
     try {
         echo helixmedia_version_check();
     } catch (Exception $e) {
@@ -114,4 +162,3 @@ function xmldb_helixmedia_upgrade($oldversion) {
 
     return true;
 }
-

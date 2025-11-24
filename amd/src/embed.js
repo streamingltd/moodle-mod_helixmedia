@@ -76,7 +76,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
     };
 
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
-        sessionURL, sessionFreq, resDelay, extraID, title, library, bs5) {
+        sessionURL, sessionFreq, resDelay, extraID, title, library, origin, bs5) {
 
         // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.

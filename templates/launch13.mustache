@@ -20,12 +20,20 @@
     Performs a MEDIAL LTI Launch
 
     Example context (json):
-    {"preid": "123", "extraid": "", "text": "Please wait", "size": 100, "hideimage": true}
+    {
+        "url": "https://medial.com",
+        "params": [{"key": "test", "value": "test"}],
+        "debuglaunch": false,
+        "size": 100,
+        "text": "Please wait",
+        "hideimage": true,
+        "name": "launchform"
+    }
 }}
 <!doctype html>
 <html>
 <head>
-    <title>MEDIAL LTI 1.0 Launch</title>
+    <title>MEDIAL LTI 1.3 Launch</title>
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Nunito&display=swap');
     </style>
@@ -36,19 +44,37 @@
     window.parent.postMessage('preid_{{preid}}', '*');
 </script>
 {{/postscript}}
+<form action="{{url}}" name="{{name}}" id="hmlLtiForm" method="post"
+    encType="application/x-www-form-urlencoded">
+    {{#params}}
+    <input type="hidden" name="{{key}}" value="{{value}}">
+    {{/params}}
+    {{#debuglaunch}}
+    <input type="submit" value="Launch">
+    {{/debuglaunch}}
+</form>
 
-{{{legacyjsresize}}}
+{{#debuglaunch}}
+{{#params}}
+{{key}}: {{value}}<br />
+{{/params}}{{#debugparams}}
+{{key}}: {{value}}<br />
+{{/debugparams}}
+{{/debuglaunch}}
 
-{{#pleasewait}}
+{{^debuglaunch}}
+
 {{>mod_helixmedia/pleasewait}}
-{{/pleasewait}}
-
-{{{launchcode}}}
 
 <script>
-function closethis() {
-    window.parent.postMessage('close_modal', '*');
-}
+    //<![CDATA[
+    document.addEventListener("readystatechange", (event) => {
+        if (document.readyState == "complete") {
+            document.getElementById('hmlLtiForm').submit();
+        }
+    });
+    //]]>
 </script>
+{{/debuglaunch}}
 </body>
 </html>

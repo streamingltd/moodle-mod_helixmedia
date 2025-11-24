@@ -25,7 +25,7 @@ defined('MOODLE_INTERNAL') || die();
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 use renderable;
 use renderer_base;
@@ -41,7 +41,6 @@ use moodle_url;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class modal implements renderable, templatable {
-
     /**
      * @var The resource link ID.
      */
@@ -110,8 +109,18 @@ class modal implements renderable, templatable {
      * @param bool $extraid An extra ID item to append on the div id
      * @param bool $library true if this is a libary view request
      **/
-    public function __construct($preid, $paramsthumb, $paramslink, $image,
-        $text = false, $c = false, $statuscheck = true, $flextype = 'row', $extraid = false, $library = false) {
+    public function __construct(
+        $preid,
+        $paramsthumb,
+        $paramslink,
+        $image,
+        $text = false,
+        $c = false,
+        $statuscheck = true,
+        $flextype = 'row',
+        $extraid = false,
+        $library = false
+    ) {
         global $CFG, $COURSE, $DB, $USER, $OUTPUT;
 
         if (!$text) {
@@ -136,7 +145,7 @@ class modal implements renderable, templatable {
         }
 
         if ($extraid !== false) {
-            $this->extraid = '_'.$extraid;
+            $this->extraid = '_' . $extraid;
         } else {
             $this->extraid = '';
         }
@@ -183,12 +192,13 @@ class modal implements renderable, templatable {
             helixmedia_get_status_url(),
             $modconfig->consumer_key,
             $statuscheck,
-            $CFG->wwwroot."/mod/helixmedia/session.php",
+            $CFG->wwwroot . "/mod/helixmedia/session.php",
             ($CFG->sessiontimeout / 2) * 1000,
             intval($modconfig->modal_delay),
             $this->extraid,
             $this->text,
             $this->library,
+            $CFG->wwwroot,
             helixmedia_is_moodle_5(),
         ];
     }

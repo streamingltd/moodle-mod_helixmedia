@@ -24,7 +24,7 @@
  */
 
 require_once("../../config.php");
-require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
 
 $id = required_param('id', PARAM_INT);
 $course = $DB->get_record('course', ['id' => $id], '*', MUST_EXIST);
@@ -33,12 +33,13 @@ require_login($course);
 $PAGE->set_pagelayout('incourse');
 
 $event = \mod_helixmedia\event\course_module_instance_list_viewed::create(
-    ['context' => context_course::instance($course->id)]);
+    ['context' => context_course::instance($course->id)]
+);
 $event->add_record_snapshot('course', $course);
 $event->trigger();
 
 $PAGE->set_url('/mod/helixmedia/index.php', ['id' => $course->id]);
-$pagetitle = strip_tags($course->shortname.': '.get_string("modulenamepluralformatted", "helixmedia"));
+$pagetitle = strip_tags($course->shortname . ': ' . get_string("modulenamepluralformatted", "helixmedia"));
 $PAGE->set_title($pagetitle);
 $PAGE->set_heading($course->fullname);
 
@@ -56,7 +57,7 @@ if (! $hmlis = get_all_instances_in_course("helixmedia", $course)) {
 // Print the list of instances (your module will probably extend this).
 $timenow = time();
 $strname = get_string("name");
-$strsectionname  = get_string('sectionname', 'format_'.$course->format);
+$strsectionname  = get_string('sectionname', 'format_' . $course->format);
 $usesections = course_format_uses_sections($course->format);
 
 $table = new html_table();

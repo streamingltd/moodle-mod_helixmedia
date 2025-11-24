@@ -27,17 +27,6 @@ use renderable;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends plugin_renderer_base {
-
-    /**
-     * Render popup container
-     *
-     * @param renderable $fd
-     * @return string
-     */
-    public function render_container(renderable $fd) {
-        return $this->render_from_template('mod_helixmedia/container', $fd->export_for_template($this));
-    }
-
     /**
      * Render LTI view
      *
@@ -86,6 +75,16 @@ class renderer extends plugin_renderer_base {
         return $this->render_from_template('mod_helixmedia/launcher', $fd->export_for_template($this));
     }
 
+
+    /**
+     * Render launch code
+     * @param renderable $fd
+     * @return string
+     */
+    public function render_launcher13(renderable $fd) {
+        return $this->render_from_template('mod_helixmedia/launch13', $fd->export_for_template($this));
+    }
+
     /**
      * Render launch message
      * @param renderable $fd
@@ -95,4 +94,12 @@ class renderer extends plugin_renderer_base {
         return $this->render_from_template('mod_helixmedia/launchmessage', $fd->export_for_template($this));
     }
 
+    /**
+     * Render lti13 auth process
+     * @param renderable $fd
+     * @return string
+     */
+    public function render_auth(renderable $fd) {
+        return $this->render_from_template('mod_helixmedia/launch13', $fd->export_for_template($this));
+    }
 }

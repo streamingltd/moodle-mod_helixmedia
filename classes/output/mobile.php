@@ -28,9 +28,9 @@ namespace mod_helixmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
-require_once($CFG->dirroot.'/mod/helixmedia/lib.php');
-require_once($CFG->dirroot.'/mod/helixmedia/locallib.php');
-require_once($CFG->libdir.'/externallib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
+require_once($CFG->libdir . '/externallib.php');
 
 use context_module;
 use mod_helixmedia_external;
@@ -39,7 +39,6 @@ use mod_helixmedia_external;
  * Handles requests from MoodleMobile
  */
 class mobile {
-
     /**
      * Returns the helixmedia course view for the mobile app.
      * @param  array $args Arguments from tool_mobile_get_content WS
@@ -53,31 +52,24 @@ class mobile {
         $cm = get_coursemodule_from_id('helixmedia', $args->cmid);
 
         // Capabilities check.
-        require_login($args->courseid , false , $cm, true, true);
+        require_login($args->courseid, false, $cm, true, true);
 
         $context = context_module::instance($cm->id);
 
-        require_capability ('mod/helixmedia:view', $context);
+        require_capability('mod/helixmedia:view', $context);
         if ($args->userid != $USER->id) {
             require_capability('mod/helixmedia:manage', $context);
         }
         $helixmedia = $DB->get_record('helixmedia', ['id' => $cm->instance]);
-        $size = helixmedia_get_instance_size($helixmedia->preid, $args->courseid);
+        $size = helixmedia_get_instance_size($helixmedia, $args->courseid);
 
-        $token = self::random_code(40);
-        $tokenid = $DB->insert_record("helixmedia_mobile", [
-            'instance' => $cm->id,
-            'userid' => $USER->id,
-            'course' => $args->courseid,
-            'token' => $token,
-            'timecreated' => time(), ]
-        );
+        [$token, $tokenid] = helixmedia_get_mobile_token($cm->id, $USER->id, $args->courseid);
 
-        $launchurl = $CFG->wwwroot."/mod/helixmedia/launch.php?type=".HML_LAUNCH_NORMAL."&id=".$cm->id.
-            "&mobiletokenid=".$tokenid."&mobiletoken=".$token;
+        $launchurl = $CFG->wwwroot . "/mod/helixmedia/launch.php?type=" . HML_LAUNCH_NORMAL . "&id=" . $cm->id .
+            "&mobiletokenid=" . $tokenid . "&mobiletoken=" . $token;
 
         $helixmedia->name = format_string($helixmedia->name);
-        list($helixmedia->intro, $helixmedia->introformat) =
+        [$helixmedia->intro, $helixmedia->introformat] =
             external_format_text($helixmedia->intro, $helixmedia->introformat, $context->id, 'mod_helixmedia', 'intro');
 
         $data = [
@@ -87,6 +79,7 @@ class mobile {
             'launchurl' => $launchurl,
             'description' => $helixmedia->showdescriptionlaunch ? $helixmedia->intro : '',
             'canusemoduleinfo' => $args->appversioncode >= 44000,
+            'medialurl' => get_config("helixmedia", "launchurl"),
         ];
 
         if ($size->audioonly) {
@@ -106,20 +99,5 @@ class mobile {
             'otherdata' => '',
             'files' => '',
         ];
-    }
-
-    /**
-     * Generates a random code
-     * @param int $length The number of chars to return
-     * @return A string
-     */
-    private static function random_code($length) {
-        $chars = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        $clen   = strlen($chars) - 1;
-        $id  = '';
-        for ($i = 0; $i < $length; $i++) {
-            $id .= $chars[mt_rand(0, $clen)];
-        }
-        return $id;
     }
 }
