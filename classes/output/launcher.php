@@ -120,6 +120,14 @@ class launcher extends launcherbase implements renderable, templatable {
     }
 
     /**
+    * Gets the Lti message type to send with a launch
+    * @return string
+    **/
+    protected function message_type() {
+        return 'hml-launch-request';
+    }
+
+    /**
      * Exports data for rendering
      * @param renderer_base $output The renderer
      * @return array

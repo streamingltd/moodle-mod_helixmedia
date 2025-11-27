@@ -143,6 +143,14 @@ class launcher13 extends launcherbase implements renderable, templatable {
     }
 
     /**
+    * Gets the Lti message type to send with a launch
+    * @return string
+    **/
+    protected function message_type() {
+        return 'ContentItemSelectionRequest';
+    }
+
+    /**
      * Gets a param as a stdclass
      * @param string $key
      * @param string $value

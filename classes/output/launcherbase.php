@@ -143,7 +143,7 @@ class launcherbase {
             case HML_LAUNCH_ATTO_EDIT:
                 $custom['custom_link_response'] = 'Y';
                 $typeconfig['loadingtext'] = get_string('pleasewaitup', 'helixmedia');
-                $typeconfig['messagetype'] = 'ContentItemSelectionRequest';
+                $typeconfig['messagetype'] = $this->message_type();
                 break;
             case HML_LAUNCH_STUDENT_SUBMIT_THUMBNAILS:
                 // Nothing to do here.
@@ -155,7 +155,7 @@ class launcherbase {
                 $custom['custom_assignment_ref'] = strval($instance->cmid);
                 $custom['custom_temp_assignment_ref'] = helixmedia_get_assign_into_refs($instance->cmid);
                 $custom['custom_group_assignment'] = helixmedia_is_group_assign($instance->cmid);
-                $typeconfig['messagetype'] = 'ContentItemSelectionRequest';
+                $typeconfig['messagetype'] = $this->message_type();
 
                 $typeconfig['loadingtext'] = get_string('pleasewaitup', 'helixmedia');
                 break;
@@ -180,7 +180,7 @@ class launcherbase {
                 break;
             case HML_LAUNCH_FEEDBACK:
                 $typeconfig['loadingtext'] = get_string('pleasewaitup', 'helixmedia');
-                $typeconfig['messagetype'] = 'ContentItemSelectionRequest';
+                $typeconfig['messagetype'] = $this->message_type();
                 break;
         }
 
@@ -213,6 +213,14 @@ class launcherbase {
             $typeconfig['organizationid'] = $urlparts['host'];
         }
         return $typeconfig;
+    }
+
+    /**
+    * Gets the Lti message type to send with a launch
+    * @return string
+    **/
+    protected function message_type() {
+        throw new \Exception("Must be implemented in sub class");
     }
 
     /**
