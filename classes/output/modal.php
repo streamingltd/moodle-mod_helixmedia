@@ -200,6 +200,7 @@ class modal implements renderable, templatable {
             $this->library,
             $CFG->wwwroot,
             helixmedia_is_moodle_5(),
+            get_config("helixmedia", "launchurl"),
         ];
     }
 

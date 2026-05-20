@@ -18,7 +18,6 @@
  * @copyright  2021 Tim Williams Streaming LTD
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 define(['jquery'], function($) {
     var module = {};
     module.instances = [];
@@ -36,16 +35,15 @@ define(['jquery'], function($) {
         minst.openmodal = function(evt) {
             evt.preventDefault();
 
+            minst.modalVisibility(true);
+
             var lu = minst.params.launchurl;
             if (minst.params.videorref !== '') {
                 lu = lu + "&video_ref=" + minst.params.videoref;
             }
-            $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', lu);
-            if (!minst.params.bs5) {
-                $('.modal-backdrop').css('position', 'relative');
-            }
 
-            $('.modal-backdrop').css('z-index', '0');
+            document.getElementById('mod_helixmedia_launchframe_' + minst.params.docID).src = lu;
+
             if (minst.params.doStatusCheck) {
                 if (minst.params.statusURL !== false) {
                     setTimeout(minst.checkStatus, 500);
@@ -53,6 +51,70 @@ define(['jquery'], function($) {
                 setTimeout(minst.maintainSession, minst.params.sessionFreq);
             }
             window.addEventListener("message", minst.onmessage);
+        };
+
+        minst.modalVisibility = function(show) {
+            // Maintain existing Jquery behaviour if we are using bootstrap 4
+            if (!minst.params.bs5) {
+                if (show) {
+                    $('.modal-backdrop').css('z-index', '0');
+                    $('.modal-backdrop').css('position', 'relative');
+                } else {
+                    $('#mod_helixmedia_modal_' + minst.params.docID).modal('hide');
+                }
+                return;
+            }
+
+            // This ensures that the visibility of the modal and the backdrop is always set correctly.
+            // Themes such as Edweiser RemUi have code that causes problems with this custom dialogue meaning it never shows.
+            // JQuery modal calls also seems to fail if Edweiser plugins are present, so do this with pure JS.
+
+            var element = document.getElementById('mod_helixmedia_modal_' + minst.params.docID);
+            var backdrop = document.getElementsByClassName('modal-backdrop');
+            if (backdrop.length > 0) {
+                backdrop = backdrop[0];
+            } else {
+                backdrop = false;
+            }
+
+            if (show) {
+                if (element.classList.contains('hide')) {
+                    element.classList.remove('hide');
+                }
+
+                if (!element.classList.contains('show')) {
+                    element.classList.add('show');
+                }
+
+                if (backdrop) {
+                    if (!backdrop.classList.contains('show')) {
+                        backdrop.classList.add('show');
+                    }
+
+                    if (backdrop.classList.contains('hide')) {
+                        backdrop.classList.remove('hide');
+                    }
+                }
+                return;
+            }
+
+            if (!element.classList.contains('hide')) {
+                element.classList.add('hide');
+            }
+
+            if (element.classList.contains('show')) {
+                element.classList.remove('show');
+            }
+
+            if (backdrop) {
+                if (backdrop.classList.contains('show')) {
+                    backdrop.classList.remove('show');
+                }
+
+                if (!backdrop.classList.contains('hide')) {
+                    backdrop.classList.add('hide');
+                }
+            }
         };
 
         minst.onmessage = function(evt) {
@@ -88,7 +150,6 @@ define(['jquery'], function($) {
                 hfcustom.value = JSON.stringify(evt.data.custom);
             }
 
-
             var addgrades = mform1.elements.namedItem('addgrades');
             if (addgrades !== null) {
                 if (evt.data.custom.is_quiz.toLowerCase() == "true") {
@@ -112,11 +173,12 @@ define(['jquery'], function($) {
                     $(this).css('font-size', 'large');
                 }
             });
+
         };
 
         minst.closemodalListen = function(evt) {
             evt.preventDefault();
-            minst.closemodal();
+            minst.closeDialogue();
         };
 
         minst.closemodal = function() {
@@ -125,7 +187,7 @@ define(['jquery'], function($) {
                 minst.params.medialInterval = false;
             }
 
-            $('#mod_helixmedia_launchframe_' + minst.params.docID).attr('src', '');
+            document.getElementById('mod_helixmedia_launchframe_' + minst.params.docID).src = '';
 
             if (!minst.params.doStatusCheck) {
                 return;
@@ -144,7 +206,8 @@ define(['jquery'], function($) {
         };
 
         minst.closeDialogue = function() {
-            $('#mod_helixmedia_modal_' + minst.params.docID).modal('hide');
+            // Workaround for themes where the bootstrap activation isn't enough on it's own.
+            minst.modalVisibility(false);
             minst.closemodal();
         };
 
@@ -205,7 +268,6 @@ define(['jquery'], function($) {
 
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
         sessionURL, sessionFreq, resDelay, extraID, title, library, origin, bs5) {
-
 
         // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.

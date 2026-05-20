@@ -216,9 +216,9 @@ class launcherbase {
     }
 
     /**
-    * Gets the Lti message type to send with a launch
-    * @return string
-    **/
+     * Gets the Lti message type to send with a launch
+     * @return string
+     **/
     protected function message_type() {
         throw new \Exception("Must be implemented in sub class");
     }

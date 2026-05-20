@@ -19,7 +19,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFactory, Templates) {
+define(['jquery', 'core/modal', 'core/templates'], function($, Modal, Templates) {
     var module = {};
     module.instances = [];
     module.first = true;
@@ -39,7 +39,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
         };
 
         minst.initmodal = async function() {
-            minst.modal = await ModalFactory.create({
+            minst.modal = await Modal.create({
                 title: minst.params.title,
                 body: Templates.render('mod_helixmedia/modalinner', minst.params),
                 large: true
@@ -76,7 +76,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
     };
 
     module.init = function(frameid, launchurl, thumburl, resID, userID, statusURL, oauthConsumerKey, doStatusCheck,
-        sessionURL, sessionFreq, resDelay, extraID, title, library, origin, bs5) {
+        sessionURL, sessionFreq, resDelay, extraID, title, library, origin, bs5, medialurl) {
 
         // AMD Modules aren't unique, so this will get called in the same instance for each MEDIAL we have on the page.
         // That causes trouble on the quiz grading interface in particular, so wrap each call in an inner object.
@@ -88,6 +88,7 @@ define(['jquery', 'core/modal_factory', 'core/templates'], function($, ModalFact
 
         var params = {};
         params.launchurl = launchurl;
+        params.medialurl = medialurl;
         params.userID = userID;
         params.preid = resID;
         params.extraid = extraID;

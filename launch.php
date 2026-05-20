@@ -28,17 +28,113 @@ require_once("../../config.php");
 require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
 
-// Course module ID.
-$id = optional_param('id', 0, PARAM_INT); // Course Module ID.
+$modconfig = get_config("helixmedia");
 
-// Assignment course module ID.
-$aid = optional_param('aid', 0, PARAM_INT);
+if ($modconfig->protectreferer) {
+    // Users arriving on this page should not have been calling the URL directly, so block anybody who tries.
+    $referer = get_local_referer();
+    if (empty($referer)) {
+        $PAGE->set_context(context_system::instance());
+        $output = $PAGE->get_renderer('mod_helixmedia');
+        $disp = new \mod_helixmedia\output\launchmessage(get_string('no_direct_launch', 'helixmedia'));
+        echo $output->render($disp);
+        die;
+    }
 
-// HML preid, only used here for a Fake launch for new instances.
-$l = optional_param('l', 0, PARAM_INT);  // HML ID.
+    // Block launches that aren't intiated from somewhere else in Moodle.
+    $pos = strpos($referer, $CFG->wwwroot);
+    if ($pos === false || $pos !== 0) {
+        $PAGE->set_context(context_system::instance());
+        $output = $PAGE->get_renderer('mod_helixmedia');
+        $disp = new \mod_helixmedia\output\launchmessage(get_string('bad_referer', 'helixmedia'));
+        echo $output->render($disp);
+        die;
+    }
+}
+
+// Get the launch parameters.
+$data = optional_param('data', false, PARAM_TEXT);
+if ($data) {
+    $output = helixmedia_decode_ldata($data);
+
+    if (property_exists($output, 'error')) {
+        $PAGE->set_context(context_system::instance());
+        $disp = new \mod_helixmedia\output\launchmessage($output->error);
+        $renderer = $PAGE->get_renderer('mod_helixmedia');
+        echo $renderer->render($disp);
+        die;
+    }
+
+    // Course module ID.
+    $id = 0; // Course Module ID.
+    // Assignment course module ID.
+    $aid = 0;
+    // HML preid, only used here for a Fake launch for new instances.
+    $l = clean_param($output->l, PARAM_INT);
+    // New assignment submission ID.
+    $nassign = 0;
+    // Existing assignment submission ID.
+    $eassign = 0;
+    // New feedback ID.
+    $nfeed = 0;
+    // Existing feedback ID.
+    $efeed = 0;
+    // User ID for student submission viewing.
+    $userid = 0;
+    // Launch type.
+    $type = clean_param($output->type, PARAM_INT);
+    // Item name.
+    $name  = "";
+    // Item Intro text.
+    $intro  = "";
+    // What's the modtype here.
+    $modtype  = "";
+    // Check for responsive embeds with ATTO or TinyMCE.
+    $responsive = clean_param($output->responsive, PARAM_INT);
+    // Video ref for thumbnail if we have selected a new video.
+    if (property_exists($output, 'videoref')) {
+        $videoref = clean_param($output->videoref, PARAM_TEXT);
+    } else {
+        $videoref = '';
+    }
+} else {
+    // Course module ID.
+    $id = optional_param('id', 0, PARAM_INT); // Course Module ID.
+    // Assignment course module ID.
+    $aid = optional_param('aid', 0, PARAM_INT);
+    // HML preid, only used here for a Fake launch for new instances.
+    $l = optional_param('l', 0, PARAM_INT);  // HML ID.
+    // New assignment submission ID.
+    $nassign = optional_param('n_assign', 0, PARAM_INT);
+    // Existing assignment submission ID.
+    $eassign = optional_param('e_assign', 0, PARAM_INT);
+    // New feedback ID.
+    $nfeed = optional_param('n_feed', 0, PARAM_INT);
+    // Existing feedback ID.
+    $efeed = optional_param('e_feed', 0, PARAM_INT);
+    // User ID for student submission viewing.
+    $userid = optional_param('userid', 0, PARAM_INT);
+    // Launch type.
+    $type = required_param('type', PARAM_INT);
+    // Item name.
+    $name  = optional_param('name', "", PARAM_TEXT);
+    // Item Intro text.
+    $intro  = optional_param('intro', "", PARAM_TEXT);
+    // What's the modtype here.
+    $modtype  = optional_param('modtype', "", PARAM_TEXT);
+    // Check for responsive embeds with ATTO or TinyMCE.
+    $responsive = optional_param('responsive', 0, PARAM_BOOL);
+    // Video ref for thumbnail if we have selected a new video.
+    $videoref = optional_param('video_ref', "", PARAM_TEXT);
+}
+
+// Base64 encoded return URL.
+$ret  = optional_param('ret', "", PARAM_TEXT);
 
 // Hidden option to force debug lanuch.
 $debug = optional_param('debuglaunch', 0, PARAM_INT);
+
+
 
 // Course ID.
 // Note using $COURSE->id here seems to give random results.
@@ -64,42 +160,6 @@ if ($c === false) {
     $courseinc = true;
 }
 
-// New assignment submission ID.
-$nassign = optional_param('n_assign', 0, PARAM_INT);
-
-// Existing assignment submission ID.
-$eassign = optional_param('e_assign', 0, PARAM_INT);
-
-// New feedback ID.
-$nfeed = optional_param('n_feed', 0, PARAM_INT);
-
-// Existing feedback ID.
-$efeed = optional_param('e_feed', 0, PARAM_INT);
-
-// User ID for student submission viewing.
-$userid = optional_param('userid', 0, PARAM_INT);
-
-// Launch type.
-$type = required_param('type', PARAM_INT);
-
-// Base64 encoded return URL.
-$ret  = optional_param('ret', "", PARAM_TEXT);
-
-// Item name.
-$name  = optional_param('name', "", PARAM_TEXT);
-
-// Item Intro text.
-$intro  = optional_param('intro', "", PARAM_TEXT);
-
-// What's the modtype here.
-$modtype  = optional_param('modtype', "", PARAM_TEXT);
-
-// Check for responsive embeds with ATTO or TinyMCE.
-$responsive = optional_param('responsive', 0, PARAM_BOOL);
-
-// Video ref for thumbnail if we have selected a new video.
-$videoref = optional_param('video_ref', "", PARAM_TEXT);
-
 if (strlen($ret) > 0) {
     $ret = base64_decode($ret);
 }
@@ -108,8 +168,6 @@ $hmli = null;
 $cmid = -1;
 $postscript = false;
 $legacyjsresize = false;
-
-$modconfig = get_config("helixmedia");
 
 if (
     $l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_TINYMCE_VIEW ||
@@ -121,6 +179,15 @@ if (
     $hmli->id = -1;
 
     if ($l) {
+        // If we are getting $l here, it means the link shouldn't exist in one of the tables where we store links directly.
+        // If the link does exist then it should only be viewed by referencing the correct DB entry, so block the launch here.
+        if (helixmedia_resource_link_exists($l)) {
+            $PAGE->set_context(context_system::instance());
+            $output = $PAGE->get_renderer('mod_helixmedia');
+            $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_launch_data', 'helixmedia'));
+            echo $output->render($disp);
+            die;
+        }
         $hmli->preid = $l;
     } else {
         if ($nassign) {

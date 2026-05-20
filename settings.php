@@ -218,3 +218,10 @@ $settings->add(new admin_setting_configcheckbox(
     get_string('restrictdebug_help', 'helixmedia'),
     1
 ));
+
+$settings->add(new admin_setting_configcheckbox(
+    'helixmedia/protectreferer',
+    get_string('protectreferer', 'helixmedia'),
+    get_string('protectreferer_help', 'helixmedia'),
+    1
+));

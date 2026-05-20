@@ -1012,3 +1012,48 @@ function helixmedia_random_code($length) {
     }
     return $id;
 }
+
+/**
+ * Decode and validata encoded launch data from html editor
+ * @param string $data The data string
+ * @return stdclass The decoded data
+ **/
+function helixmedia_decode_ldata($data) {
+    $outputj = json_decode(base64_decode($data));
+    if (!$outputj) {
+        $d = new \stdclass();
+        $d->error = 'Invalid data string';
+        return $d;
+    }
+    $sig = $outputj->sig;
+    unset($outputj->sig);
+    $calculatedhash = hash('sha256', json_encode($outputj));
+    if ($sig != $calculatedhash) {
+        $d = new \stdclass();
+        $d->error = 'Hash mismatch for MEDIAL launch';
+        return $d;
+    }
+    return $outputj;
+}
+
+/**
+ * This checks to see if the supplied resource link ID exists in any of our database tables
+ * @param int $l The resource link ID
+ * @return true if it does
+ **/
+function helixmedia_resource_link_exists($l) {
+    global $DB;
+    $mod = $DB->get_record('helixmedia', ['preid' => $l]);
+    if ($mod) {
+        return true;
+    }
+    $mod = $DB->get_record('assignsubmission_helixassign', ['preid' => $l]);
+    if ($mod) {
+        return true;
+    }
+    $mod = $DB->get_record('assignfeedback_helixfeedback', ['preid' => $l]);
+    if ($mod) {
+        return true;
+    }
+    return false;
+}
