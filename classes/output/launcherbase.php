@@ -296,7 +296,7 @@ class launcherbase {
         if (
             $typeconfig['sendemailaddr'] == LTI_SETTING_ALWAYS ||
             ($typeconfig['sendemailaddr'] == LTI_SETTING_DELEGATE &&
-            $instance->instructorchoicesendemailaddr == LTI_SETTILTI_VERSION_1P3NG_ALWAYS )
+            $instance->instructorchoicesendemailaddr == LTI_SETTING_ALWAYS )
         ) {
             $requestparams['lis_person_contact_email_primary'] = $user->email;
         }
