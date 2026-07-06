@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
+
 /**
  * This file contains a library of functions and constants for the helixmedia module
  *
