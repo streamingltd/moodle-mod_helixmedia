@@ -69,7 +69,7 @@ if (!$hosturl) {
 
         $warning .= "<div class='border rounded pb-2 pt-2 pl-3 pr-3 d-inline-block mb-3 text-dark bg-light'>" .
             "UPDATE " . $CFG->prefix . "config_plugins SET value = '" . $CFG->wwwroot .
-            "' WHERE plugin = 'helixmedia' AND name = 'clientid';" .
+            "' WHERE plugin = 'helixmedia' AND name = 'hosturl';" .
             "</div>";
 
         $settings->add(new admin_setting_heading('helixmedia/lti13warn', get_string("sitewarningheader", "helixmedia"), $warning));

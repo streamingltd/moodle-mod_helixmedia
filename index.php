@@ -73,10 +73,17 @@ if ($usesections) {
 foreach ($hmlis as $hmli) {
     if (!$hmli->visible) {
         // Show dimmed if the mod is hidden.
-        $link = "<a class=\"dimmed\" href=\"view.php?id=$hmli->coursemodule\">$hmli->name</a>";
+        $link = html_writer::link(
+            new moodle_url('/mod/helixmedia/view.php', ['id' => $hmli->coursemodule]),
+            format_string($hmli->name),
+            ['class' => 'dimmed']
+        );
     } else {
         // Show normal if the mod is visible.
-        $link = "<a href=\"view.php?id=$hmli->coursemodule\">$hmli->name</a>";
+        $link = html_writer::link(
+            new moodle_url('/mod/helixmedia/view.php', ['id' => $hmli->coursemodule]),
+            format_string($hmli->name)
+        );
     }
 
     if ($usesections) {

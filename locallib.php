@@ -771,10 +771,10 @@ function helixmedia_new_access_token($scopes) {
  *
  * @param string[] $scopes  Array of scopes which give permission for the current request.
  *
- * @return string|int|boolean  The OAuth consumer key, the LTI type ID for the validated bearer token,
+ * @return boolean  true for validated bearer token and scope,
                                true for requests not requiring a scope, otherwise false.
  */
-function helixmedia_get_oauth_key_from_headers($scopes = null) {
+function helixmedia_is_valid_for_scope($scopes = null) {
     global $DB, $CFG;
     require_once($CFG->dirroot . '/mod/lti/OAuth.php');
     $now = time();
@@ -783,9 +783,8 @@ function helixmedia_get_oauth_key_from_headers($scopes = null) {
 
     if (isset($requestheaders['Authorization'])) {
         if (substr($requestheaders['Authorization'], 0, 6) == "OAuth ") {
-            $headerparameters = OAuthUtil::split_header($requestheaders['Authorization']);
-
-            return format_string($headerparameters['oauth_consumer_key']);
+            // MEDIAL Only uses LTI 1.3 for these requests, so reject anything that's using OAuth.
+            return false;
         } else if (empty($scopes)) {
             return true;
         } else if (substr($requestheaders['Authorization'], 0, 7) == 'Bearer ') {
@@ -1047,13 +1046,19 @@ function helixmedia_resource_link_exists($l) {
     if ($mod) {
         return true;
     }
-    $mod = $DB->get_record('assignsubmission_helixassign', ['preid' => $l]);
-    if ($mod) {
-        return true;
+
+    if (get_config('assignsubmission_helixassign', 'version')) {
+        $mod = $DB->get_record('assignsubmission_helixassign', ['preid' => $l]);
+        if ($mod) {
+            return true;
+        }
     }
-    $mod = $DB->get_record('assignfeedback_helixfeedback', ['preid' => $l]);
-    if ($mod) {
-        return true;
+
+    if (get_config('assignfeedback_helixfeedback', 'version')) {
+        $mod = $DB->get_record('assignfeedback_helixfeedback', ['preid' => $l]);
+        if ($mod) {
+            return true;
+        }
     }
     return false;
 }

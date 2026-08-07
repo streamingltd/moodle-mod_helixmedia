@@ -146,7 +146,7 @@ $context = context_course::instance($launchdata->hmli->course);
 $PAGE->set_context($context);
 $output = $PAGE->get_renderer('mod_helixmedia');
 
-if ($cap == null || !has_capability($cap, $context, $USER)) {
+if ($cap == null || !has_capability($cap, $context, $user)) {
     $disp = new \mod_helixmedia\output\launchmessage(get_string('not_authorised', 'helixmedia'));
     echo $output->render($disp);
     die;

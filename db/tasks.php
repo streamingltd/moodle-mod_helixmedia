@@ -39,7 +39,7 @@ $tasks = [
     [
         'classname' => 'mod_helixmedia\task\mobiletokens',
         'blocking' => 0,
-        'minute' => '0',
+        'minute' => '*/15',
         'hour' => '*',
         'day' => '*',
         'month' => '*',

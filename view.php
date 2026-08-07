@@ -97,7 +97,7 @@ if ($hmli->showtitlelaunch) {
 }
 
 if ($hmli->showdescriptionlaunch && $hmli->intro) {
-    echo $OUTPUT->box($hmli->intro, 'generalbox description', 'intro');
+    echo $OUTPUT->box(format_module_intro('helixmedia', $hmli, $cm->id), 'generalbox description', 'intro');
 }
 
 if ($launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW) {

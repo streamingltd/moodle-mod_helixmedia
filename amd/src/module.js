@@ -76,7 +76,6 @@ define(['jquery'], function($) {
             } else {
                 backdrop = false;
             }
-
             if (show) {
                 if (element.classList.contains('hide')) {
                     element.classList.remove('hide');
@@ -105,6 +104,14 @@ define(['jquery'], function($) {
             if (element.classList.contains('show')) {
                 element.classList.remove('show');
             }
+
+            // Something in Moodle 5.1.3+ seems to cause display to be set to block here, which leaves behind
+            // a transparent div which blocks buttons on the page until clicked, when it closes.
+            if (element.style.display != '') {
+                element.style.display = '';
+            }
+
+            document.getElementsByTagName("body")[0].style.overflow = 'auto';
 
             if (backdrop) {
                 if (backdrop.classList.contains('show')) {
@@ -255,11 +262,12 @@ define(['jquery'], function($) {
 
         minst.checkStatus = function() {
             var xmlDoc = new XMLHttpRequest();
-            var params = "resource_link_id=" + minst.params.resID + "&user_id=" + minst.params.userID +
-                "&oauth_consumer_key=" + minst.params.oauthConsumerKey;
+            var params = new FormData();
+            params.append("resource_link_id", minst.params.resID);
+            params.append("user_id", minst.params.userID);
+            params.append("oauth_consumer_key", minst.params.oauthConsumerKey);
             xmlDoc.addEventListener("load", minst.checkStatusResponse);
             xmlDoc.open("POST", minst.params.statusURL);
-            xmlDoc.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
             xmlDoc.send(params);
         };
 

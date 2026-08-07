@@ -29,8 +29,10 @@ require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
 
 $modconfig = get_config("helixmedia");
+$mobiletokenid = optional_param('mobiletokenid', 0, PARAM_INT);
 
-if ($modconfig->protectreferer) {
+// We need to skip this check if there is a mobiletoken present, since the referer will fail here for MoodleMobile.
+if ($modconfig->protectreferer && $mobiletokenid === 0) {
     // Users arriving on this page should not have been calling the URL directly, so block anybody who tries.
     $referer = get_local_referer();
     if (empty($referer)) {
@@ -307,7 +309,6 @@ if (
 }
 
 // Is this a mobile app launch?
-$mobiletokenid = optional_param('mobiletokenid', 0, PARAM_INT);
 $mobiletoken = false;
 if ($mobiletokenid > 0) {
     $mobiletoken = required_param('mobiletoken', PARAM_TEXT);
@@ -315,7 +316,8 @@ if ($mobiletokenid > 0) {
     if (
         !$tokenrecord ||
         $tokenrecord->token != $mobiletoken ||
-        $tokenrecord->instance != $cm->id
+        $tokenrecord->instance != $cm->id ||
+        $tokenrecord->course != $course->id
     ) {
             $output = $PAGE->get_renderer('mod_helixmedia');
             $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_mobile_token', 'helixmedia'));

@@ -141,8 +141,7 @@ class gradebookservices extends \ltiservice_gradebookservices\local\service\grad
         global $DB, $CFG;
 
         require_once($CFG->libdir . '/gradelib.php');
-        $lineitem = \grade_item::fetch(['id' => $itemid]);
-        return $lineitem;
+        return \grade_item::fetch(['id' => $itemid, 'itemtype' => 'mod', 'itemmodule' => 'helixmedia']);
     }
 
 
@@ -155,14 +154,6 @@ class gradebookservices extends \ltiservice_gradebookservices\local\service\grad
      * @return boolean
      */
     public function validate_tool($body = null, $scopes = null) {
-
-        $ok = true;
-        $toolproxy = null;
-        $consumerkey = helixmedia_get_oauth_key_from_headers($scopes);
-        if ($consumerkey === false) {
-            $ok = $this->is_unsigned();
-        }
-        // TODO: Check nothing else needs to be done here.
-        return $ok;
+        return helixmedia_is_valid_for_scope($scopes);
     }
 }
