@@ -97,7 +97,11 @@ if ($hmli->showtitlelaunch) {
 }
 
 if ($hmli->showdescriptionlaunch && $hmli->intro) {
-    echo $OUTPUT->box($hmli->intro, 'generalbox description', 'intro');
+    echo $OUTPUT->box(
+        format_text($hmli->intro, $hmli->introformat, ['context' => $context]),
+        'generalbox description',
+        'intro'
+    );
 }
 
 if ($launchcontainer == LTI_LAUNCH_CONTAINER_WINDOW) {
