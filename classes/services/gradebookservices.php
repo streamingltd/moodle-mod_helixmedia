@@ -155,14 +155,41 @@ class gradebookservices extends \ltiservice_gradebookservices\local\service\grad
      * @return boolean
      */
     public function validate_tool($body = null, $scopes = null) {
+        global $CFG;
 
-        $ok = true;
-        $toolproxy = null;
         $consumerkey = helixmedia_get_oauth_key_from_headers($scopes);
+
         if ($consumerkey === false) {
-            $ok = $this->is_unsigned();
+            return $this->is_unsigned();
         }
-        // TODO: Check nothing else needs to be done here.
-        return $ok;
+
+        if ($this->is_unsigned()) {
+            return true;
+        }
+
+        $modconfig = get_config('helixmedia');
+        $configuredkey = $modconfig->consumer_key ?? '';
+        $secret = $modconfig->shared_secret ?? '';
+
+        if (
+            (string) $consumerkey === '' ||
+            empty($configuredkey) ||
+            empty($secret) ||
+            !hash_equals((string) $configuredkey, (string) $consumerkey)
+        ) {
+            return false;
+        }
+
+        require_once($CFG->dirroot . '/mod/lti/OAuthBody.php');
+
+        try {
+            \moodle\mod\lti\handle_oauth_body_post($consumerkey, $secret, $body);
+        } catch (\Exception $e) {
+            debugging('mod_helixmedia gradebookservices: OAuth signature validation failed: ' .
+                $e->getMessage(), DEBUG_DEVELOPER);
+            return false;
+        }
+
+        return true;
     }
 }
