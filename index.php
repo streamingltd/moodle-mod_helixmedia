@@ -73,10 +73,12 @@ if ($usesections) {
 foreach ($hmlis as $hmli) {
     if (!$hmli->visible) {
         // Show dimmed if the mod is hidden.
-        $link = "<a class=\"dimmed\" href=\"view.php?id=$hmli->coursemodule\">$hmli->name</a>";
+        $link = "<a class=\"dimmed\" href=\"view.php?id=$hmli->coursemodule\">" .
+            format_string($hmli->name, true, ['context' => context_module::instance($hmli->coursemodule)]) . "</a>";
     } else {
         // Show normal if the mod is visible.
-        $link = "<a href=\"view.php?id=$hmli->coursemodule\">$hmli->name</a>";
+        $link = "<a href=\"view.php?id=$hmli->coursemodule\">" .
+            format_string($hmli->name, true, ['context' => context_module::instance($hmli->coursemodule)]) . "</a>";
     }
 
     if ($usesections) {

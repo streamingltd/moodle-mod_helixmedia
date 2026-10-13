@@ -27,6 +27,7 @@
 defined('MOODLE_INTERNAL') || die;
 
 require_once("$CFG->libdir/externallib.php");
+require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 
 /**
  * helixmedia external functions
@@ -61,6 +62,27 @@ class mod_helixmedia_external extends external_api {
     public static function get_launch_data($id, $userid, $course) {
         global $DB, $USER;
         $warnings = [];
+
+        $params = self::validate_parameters(self::get_launch_data_parameters(), [
+            'id' => $id,
+            'user' => $userid,
+            'course' => $course,
+        ]);
+        $id = $params['id'];
+        $userid = $params['user'];
+        $course = $params['course'];
+
+        // Launch data can only be requested for the current user, so reject any
+        // request where the supplied user id is not the authenticated caller's own.
+        if ($userid != $USER->id) {
+            throw new \moodle_exception('accessdenied', 'admin');
+        }
+
+        // Resolve the course module and enforce access/capability within its context.
+        $cm = get_coursemodule_from_id('helixmedia', $id, $course, false, MUST_EXIST);
+        $context = \context_module::instance($cm->id);
+        self::validate_context($context);
+        require_capability('mod/helixmedia:view', $context);
 
         [$token, $tokenid] = helixmedia_get_mobile_token($id, $userid, $course);
 
