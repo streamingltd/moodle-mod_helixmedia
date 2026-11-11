@@ -225,3 +225,10 @@ $settings->add(new admin_setting_configcheckbox(
     get_string('protectreferer_help', 'helixmedia'),
     1
 ));
+
+$settings->add(new admin_setting_configcheckbox(
+    'helixmedia/launchtypeprotection',
+    get_string('launchtypeprotection', 'helixmedia'),
+    get_string('launchtypeprotection_help', 'helixmedia'),
+    1
+));

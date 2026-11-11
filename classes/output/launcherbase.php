@@ -296,7 +296,7 @@ class launcherbase {
         if (
             $typeconfig['sendemailaddr'] == LTI_SETTING_ALWAYS ||
             ($typeconfig['sendemailaddr'] == LTI_SETTING_DELEGATE &&
-            $instance->instructorchoicesendemailaddr == LTI_SETTILTI_VERSION_1P3NG_ALWAYS )
+            $instance->instructorchoicesendemailaddr == LTI_SETTING_ALWAYS)
         ) {
             $requestparams['lis_person_contact_email_primary'] = $user->email;
         }
@@ -347,7 +347,7 @@ class launcherbase {
     /**
      * Gets the IMS role string for the specified user and Helixmedia course module.
      *
-     * @param mixed $user User object or user id
+     * @param object $user User object
      * @param int $cmid The course module id of the LTI activity
      * @param int $courseid The course id
      * @param int $type The launch type
@@ -358,19 +358,21 @@ class launcherbase {
     private function get_ims_role($user, $cmid, $courseid, $type, $modtype) {
         $roles = [];
 
-        $coursecontext = \context_course::instance($courseid);
         if (empty($cmid) || $cmid == -1) {
             // If no cmid is passed, check if the user is a teacher in the course
             // This allows other modules to programmatically "fake" a launch without
             // a real Helixmedia instance.
+            $coursecontext = \context_course::instance($courseid);
 
-            if (has_capability('moodle/course:manageactivities', $coursecontext)) {
+            if (has_capability('moodle/course:manageactivities', $coursecontext, $user)) {
                 array_push($roles, 'Instructor');
             } else {
                 array_push($roles, 'Learner');
             }
         } else {
-            if (has_capability('mod/helixmedia:manage', $coursecontext)) {
+            $modcontext = \context_module::instance($cmid);
+
+            if (has_capability('mod/helixmedia:manage', $modcontext, $user)) {
                 array_push($roles, 'Instructor');
             } else {
                 array_push($roles, 'Learner');

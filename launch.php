@@ -27,6 +27,7 @@
 require_once("../../config.php");
 require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 require_once($CFG->dirroot . '/mod/helixmedia/lib.php');
+require_once($CFG->dirroot . '/mod/assign/locallib.php');
 
 $modconfig = get_config("helixmedia");
 $mobiletokenid = optional_param('mobiletokenid', 0, PARAM_INT);
@@ -136,8 +137,6 @@ $ret  = optional_param('ret', "", PARAM_TEXT);
 // Hidden option to force debug lanuch.
 $debug = optional_param('debuglaunch', 0, PARAM_INT);
 
-
-
 // Course ID.
 // Note using $COURSE->id here seems to give random results.
 global $USER;
@@ -170,6 +169,9 @@ $hmli = null;
 $cmid = -1;
 $postscript = false;
 $legacyjsresize = false;
+$needsprealloc = false;
+$hmlfeed = false;
+$hmlassign = false;
 
 if (
     $l || $nassign || $nfeed || $type == HML_LAUNCH_TINYMCE_EDIT || $type == HML_LAUNCH_TINYMCE_VIEW ||
@@ -183,12 +185,15 @@ if (
     if ($l) {
         // If we are getting $l here, it means the link shouldn't exist in one of the tables where we store links directly.
         // If the link does exist then it should only be viewed by referencing the correct DB entry, so block the launch here.
-        if (helixmedia_resource_link_exists($l)) {
-            $PAGE->set_context(context_system::instance());
-            $output = $PAGE->get_renderer('mod_helixmedia');
-            $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_launch_data', 'helixmedia'));
-            echo $output->render($disp);
-            die;
+        if ($modconfig->launchtypeprotection) {
+            $check = helixmedia_resource_link_exists($l);
+            if ($check !== false) {
+                $PAGE->set_context(context_system::instance());
+                $output = $PAGE->get_renderer('mod_helixmedia');
+                $disp = new \mod_helixmedia\output\launchmessage(get_string('invalid_launch_data', 'helixmedia', $check));
+                echo $output->render($disp);
+                die;
+            }
         }
         $hmli->preid = $l;
     } else {
@@ -199,7 +204,7 @@ if (
                 $hmli->preid = $nfeed;
             } else {
                 if ($type == HML_LAUNCH_TINYMCE_EDIT || HML_LAUNCH_ATTO_EDIT) {
-                    $hmli->preid = helixmedia_preallocate_id();
+                    $needsprealloc = true;
                     $postscript = true;
                 }
             }
@@ -234,6 +239,8 @@ if (
     $hmli->custom = null;
     $hmli->addgrades = false;
 
+    $course = $DB->get_record('course', ['id' => $c], '*', MUST_EXIST);
+
     if ($aid) {
         $cm = get_coursemodule_from_id('assign', $aid, 0, false, MUST_EXIST);
         $assign = $DB->get_record('assign', ['id' => $cm->instance], '*', MUST_EXIST);
@@ -246,6 +253,8 @@ if (
             $hmli->name = get_string('assignfeedltititle', 'helixmedia', fullname($fuser));
         }
         $hmli->cmid = $aid;
+        $PAGE->set_cm($cm, $course);
+        $context = context_module::instance($cm->id);
     } else {
         if (strlen($name) > 0) {
             $hmli->name = $name;
@@ -256,10 +265,8 @@ if (
             $hmli->intro = fullname($USER);
         }
         $hmli->cmid = -1;
+        $context = context_course::instance($course->id);
     }
-    $course = $DB->get_record('course', ['id' => $c], '*', MUST_EXIST);
-    $context = context_course::instance($course->id);
-    $PAGE->set_context($context);
 } else {
     // Normal launch.
     if ($id) {
@@ -305,8 +312,9 @@ if (
 
     $PAGE->set_cm($cm, $course);
     $context = context_module::instance($cm->id);
-    $PAGE->set_context($context);
 }
+
+$PAGE->set_context($context);
 
 // Is this a mobile app launch?
 $mobiletoken = false;
@@ -326,18 +334,68 @@ if ($mobiletokenid > 0) {
     }
     $user = $DB->get_record('user', ['id' => $tokenrecord->userid]);
 } else {
-    require_login($course);
+    if (isset($cm)) {
+        require_login($course, false, $cm);
+    } else {
+        require_login($course);
+    }
     $user = $USER;
 }
+
+$output = $PAGE->get_renderer('mod_helixmedia');
 
 // Do some permissions stuff.
 $cap = helixmedia_auth_capability($type, $course->id, $modtype);
 
 if ($cap == null || !has_capability($cap, $context, $user)) {
-    $output = $PAGE->get_renderer('mod_helixmedia');
     $disp = new \mod_helixmedia\output\launchmessage(get_string('not_authorised', 'helixmedia'));
     echo $output->render($disp);
     die;
+}
+
+// If this is an assingment, do additional checks to make sure this is there own content or a response to it.
+if (($eassign || $efeed) && !has_capability('mod/assign:grade', $context, $user)) {
+    // If we are here we need to check that the user is allowed to view the submission.
+    $assignment = new assign($context, $cm, $course);
+
+    if (!$assignment || !$assignment->can_view_submission($user->id)) {
+        $disp = new \mod_helixmedia\output\launchmessage(get_string('not_authorised', 'helixmedia'));
+        echo $output->render($disp);
+        exit(0);
+    }
+
+    $usersubmission = false;
+    if ($assignment->get_instance()->teamsubmission) {
+        $usersubmission = $assignment->get_group_submission($user->id, 0, false);
+    } else {
+        $usersubmission = $assignment->get_user_submission($user->id, false);
+    }
+
+    if (
+        !$usersubmission ||
+        ($hmlassign && $usersubmission->id !== $hmlassign->submission) ||
+        !$assignment->can_view_submission($user->id)
+    ) {
+        $disp = new \mod_helixmedia\output\launchmessage(get_string('not_authorised', 'helixmedia'));
+        echo $output->render($disp);
+        exit(0);
+    }
+
+    if ($hmlfeed) {
+        // We can't get the grade>user via the API, so look up in DB.
+        $check = $DB->get_record("assign_grades", ['assignment' => $hmlfeed->assignment, 'id' => $hmlfeed->grade]);
+        if ($check->userid != $usersubmission->userid) {
+            $disp = new \mod_helixmedia\output\launchmessage(get_string('not_authorised', 'helixmedia'));
+            echo $output->render($disp);
+            exit(0);
+        }
+    }
+}
+
+// Create a resource link ID if we need one.
+// Deferred till after the capability check to prevent unauthorised calls creating DB entries.
+if ($needsprealloc) {
+    $hmli->preid = helixmedia_preallocate_id();
 }
 
 // Sanity check to make sure we aren't using copied details because Moodle has been backed up.
@@ -348,7 +406,6 @@ if (!$modconfig->hosturl) {
     set_config('hosturl', $CFG->wwwroot, 'helixmedia');
 } else {
     if ($modconfig->hosturl != "ignorewww" && $modconfig->hosturl != $CFG->wwwroot) {
-        $output = $PAGE->get_renderer('mod_helixmedia');
         $disp = new \mod_helixmedia\output\launchmessage(get_string('configproblem', 'helixmedia'));
         echo $output->render($disp);
         die;
@@ -358,37 +415,29 @@ if (!$modconfig->hosturl) {
 $hmli->debuglaunch = 0;
 if (
     ($modconfig->forcedebug && $modconfig->restrictdebug && is_siteadmin()) ||
-     ($modconfig->restrictdebug == false && $modconfig->forcedebug)
+    ($modconfig->restrictdebug == false && $modconfig->forcedebug)
 ) {
     $hmli->debuglaunch = 1;
 }
 
 // Do the logging.
 if ($type == HML_LAUNCH_NORMAL || $type == HML_LAUNCH_EDIT) {
-    // Moodle 4.2+ now emits a warning if legacy log methods are present in events.
-    // So we don't have to split the code base use a sub class if we actually need legacy logging here.
-    if ($CFG->version < 2023042400 && get_config('logstore_legacy', 'loglegacy') == 1) {
-        $cname = '_compat';
-    } else {
-        $cname = '';
-    }
-
     if ($type == HML_LAUNCH_EDIT) {
         if ($l) {
-            $cname = '\mod_helixmedia\event\lti_launch_edit' . $cname . '_new';
+            $cname = '\mod_helixmedia\event\lti_launch_edit_new';
             $event = $cname::create([
                 'objectid' => $hmli->id,
                 'context' => $context,
             ]);
         } else {
-            $cname = '\mod_helixmedia\event\lti_launch' . $cname . '_edit';
+            $cname = '\mod_helixmedia\event\lti_launch_edit';
             $event = $cname::create([
                 'objectid' => $hmli->id,
                 'context' => $context,
             ]);
         }
     } else {
-        $cname = '\mod_helixmedia\event\lti' . $cname . '_launch';
+        $cname = '\mod_helixmedia\event\lti_launch';
         $event = $cname::create([
             'objectid' => $hmli->id,
             'context' => $context,
@@ -438,7 +487,6 @@ if (
     }
 }
 
-$output = $PAGE->get_renderer('mod_helixmedia');
 if ($modconfig->ltiversion === LTI_VERSION_1P3) {
     $disp = new \mod_helixmedia\output\auth(
         $hmli,

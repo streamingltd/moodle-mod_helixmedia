@@ -36,13 +36,13 @@
  * @return mixed True if module supports feature, false if not, null if doesn't know
  */
 function helixmedia_supports($feature) {
+    global $CFG;
+    require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
     switch ($feature) {
         case FEATURE_GROUPS:
             return false;
         case FEATURE_GROUPINGS:
             return false;
-        case FEATURE_GROUPMEMBERSONLY:
-            return true;
         case FEATURE_MOD_INTRO:
             return true;
         case FEATURE_COMPLETION_TRACKS_VIEWS:
@@ -82,7 +82,7 @@ function helixmedia_preallocate_id() {
     if ($pre->id == 1 && ($CFG->dbtype == "mariadb" || $CFG->dbtype == "mysqli")) {
         $val = 1;
         // Check the activity mod.
-        $sql = "SELECT MAX(preid) AS preid FROM " . $CFG->prefix . "helixmedia;";
+        $sql = "SELECT MAX(preid) AS preid FROM {helixmedia};";
         $vala = $DB->get_record_sql($sql);
         if ($vala) {
             $val = $vala->preid;
@@ -90,7 +90,7 @@ function helixmedia_preallocate_id() {
         // Check the Submissions.
         $assigninstalled = $DB->get_records('assign_plugin_config', ['plugin' => 'helixassign']);
         if (count($assigninstalled) > 0) {
-            $sql = "SELECT MAX(preid) AS preid FROM " . $CFG->prefix . "assignsubmission_helixassign;";
+            $sql = "SELECT MAX(preid) AS preid FROM {assignsubmission_helixassign};";
             $valb = $DB->get_record_sql($sql);
             if ($valb && $valb->preid > $val) {
                 $val = $valb->preid;
@@ -99,8 +99,8 @@ function helixmedia_preallocate_id() {
         // Check the Feedback.
         $feedinstalled = $DB->get_records('assign_plugin_config', ['plugin' => 'helixfeedback']);
         if (count($feedinstalled) > 0) {
-            $sql = "SELECT MAX(preid) AS preid FROM " . $CFG->prefix . "assignfeedback_helixfeedback;";
-            $valc = $DB->get_record_sql($sql)->preid;
+            $sql = "SELECT MAX(preid) AS preid FROM {assignfeedback_helixfeedback};";
+            $valc = $DB->get_record_sql($sql);
             if ($valc && $valc->preid > $val) {
                 $val = $valc->preid;
             }
@@ -114,7 +114,7 @@ function helixmedia_preallocate_id() {
 
         $val = intval($val / 10) + 100;
 
-        $DB->execute("ALTER TABLE " . $CFG->prefix . "helixmedia_pre AUTO_INCREMENT=" . $val . "");
+        $DB->execute("ALTER TABLE {helixmedia_pre} AUTO_INCREMENT=" . $val . "");
         $pre = new stdclass();
         $pre->timecreated = time();
         $pre->servicesalt = uniqid('', true);
@@ -234,26 +234,6 @@ function helixmedia_delete_instance($id) {
     helixmedia_grade_item_delete($helixmedia);
 
     $DB->delete_records("helixmedia", ["id" => $helixmedia->id]);
-    return true;
-}
-
-/**
- * Execute post-install custom actions for the module
- * This function was added in 1.9
- *
- * @return boolean true if success, false on error
- */
-function helixmedia_install() {
-     return true;
-}
-
-/**
- * Execute post-uninstall custom actions for the module
- * This function was added in 1.9
- *
- * @return boolean true if success, false on error
- */
-function helixmedia_uninstall() {
     return true;
 }
 

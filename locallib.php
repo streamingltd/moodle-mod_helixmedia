@@ -139,9 +139,10 @@ function helixmedia_get_assign_into_refs($assignid) {
  * Posts an LTI launch directly to MEDIAL.
  * @param object $params The parameters to send
  * @param string $endpoint The launch url to use
+ * @param bool $nolimit true if the call should have no php time limit
  * @return string The result
  **/
-function helixmedia_curl_post_launch_html($params, $endpoint) {
+function helixmedia_curl_post_launch_html($params, $endpoint, $nolimit = false) {
     global $CFG;
     $modconfig = get_config("helixmedia");
     if ($modconfig->ltiversion === LTI_VERSION_1P3) {
@@ -150,7 +151,9 @@ function helixmedia_curl_post_launch_html($params, $endpoint) {
         $params['oauth_consumer_key'] = $modconfig->consumer_key;
     }
 
-    set_time_limit(0);
+    if ($nolimit) {
+        set_time_limit(0);
+    }
 
     $cookiesfile = $CFG->dataroot . DIRECTORY_SEPARATOR . "temp" . DIRECTORY_SEPARATOR . "helixmedia-curl-cookies-" .
         microtime(true) . ".tmp";
@@ -273,7 +276,7 @@ function curpageurl() {
  * @return object containing size information
  */
 function helixmedia_get_instance_size($hmli, $course) {
-    global $CFG;
+    global $CFG, $DB;
 
     if (isset($hmli->custom)) {
         // If this is LTI 1.3 we might have custom information that tells us this in the DB.
@@ -299,17 +302,37 @@ function helixmedia_get_instance_size($hmli, $course) {
     // If there is more than one part, then MEDIAL understands the include_height param.
     if (count($parts) > 1) {
         $vals = new stdclass();
-        $vals->width = intval($parts[0]);
-        $vals->height = intval($parts[1]);
+        // Now ignoring width/height to make all embeds responsive.
+        $vals->width = 1;
+        $vals->height = 1;
         if (count($parts) > 1 && $parts[2] == 'Y') {
             $vals->audioonly = true;
         } else {
             $vals->audioonly = false;
         }
+
+        // Save the response so we don't have to call this again.
+        if (isset($hmli->custom)) {
+            $custom = json_decode($hmli->custom);
+            if (!$custom) {
+                $custom = new \stdclass();
+            }
+        } else {
+            $custom = new \stdclass();
+        }
+
+        // Note LTI requires this to be a string.
+        $custom->audioonly = $vals->audioonly ? 'true' : 'false';
+        $rec = new \stdclass();
+        $rec->id = $hmli->id;
+        $rec->custom = json_encode($custom);
+
+        $DB->update_record('helixmedia', $rec);
+
         return $vals;
     }
 
-    // Old version of MEDIAL, return standard data.
+    // Very Old version of MEDIAL, return standard data.
     $vals = new stdclass();
     $vals->width = intval($retdata);
     $vals->height = -1;
@@ -482,7 +505,7 @@ function helixmedia_version_check() {
     $result = $curl->get($endpoint);
     $resp = $curl->get_info();
     if ($curl->get_errno() != CURLE_OK || $resp['http_code'] != 200) {
-        return "<p>CURL Error connecting to MEDIAL: url:" . $endpoint . ", response is '" . $result . "'</p>" .
+        return "<p>CURL Error connecting to MEDIAL: url:" . $endpoint . ", response is '" . htmlentities($result) . "'</p>" .
               "<p>" . get_string("version_check_fail", "helixmedia") . "</p>";
     }
 
@@ -1044,20 +1067,20 @@ function helixmedia_resource_link_exists($l) {
     global $DB;
     $mod = $DB->get_record('helixmedia', ['preid' => $l]);
     if ($mod) {
-        return true;
+        return 'activity';
     }
 
     if (get_config('assignsubmission_helixassign', 'version')) {
         $mod = $DB->get_record('assignsubmission_helixassign', ['preid' => $l]);
         if ($mod) {
-            return true;
+            return 'submission';
         }
     }
 
     if (get_config('assignfeedback_helixfeedback', 'version')) {
         $mod = $DB->get_record('assignfeedback_helixfeedback', ['preid' => $l]);
         if ($mod) {
-            return true;
+            return 'feedback';
         }
     }
     return false;

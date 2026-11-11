@@ -38,7 +38,7 @@ define(['jquery'], function($) {
             minst.modalVisibility(true);
 
             var lu = minst.params.launchurl;
-            if (minst.params.videorref !== '') {
+            if (minst.params.videoref !== '') {
                 lu = lu + "&video_ref=" + minst.params.videoref;
             }
 
@@ -203,7 +203,7 @@ define(['jquery'], function($) {
             var tframe = document.getElementById("mod_helixmedia_thumbframe_" + minst.params.docID);
 
             if (tframe !== null && typeof (minst.params.thumburl) != "undefined") {
-                if (minst.params.videorref === '') {
+                if (minst.params.videoref === '') {
                     tframe.contentWindow.location = minst.params.thumburl;
                 } else {
                     tframe.contentWindow.location = minst.params.thumburl + "&video_ref=" + minst.params.videoref;

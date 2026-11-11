@@ -24,7 +24,6 @@
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
-global $_POST, $_SERVER;
 
 $scope = optional_param('scope', '', PARAM_TEXT);
 $responsetype = optional_param('response_type', '', PARAM_TEXT);
@@ -62,7 +61,7 @@ if (($responsetype !== 'id_token')) {
 }
 
 $config = get_config('helixmedia');
-if (!$clientid === $config->clientid) {
+if ($clientid !== $config->clientid) {
     echo 'unauthorized_client';
     exit;
 }
@@ -71,7 +70,7 @@ if (property_exists($ltimessagehint, 'mobiletokenid') && $ltimessagehint->mobile
     $tokenrecord = $DB->get_record('helixmedia_mobile', ['id' => $ltimessagehint->mobiletokenid]);
     if (
         !$tokenrecord ||
-        $tokenrecord->token != $ltimessagehint->mobiletoken
+        $tokenrecord->token !== $ltimessagehint->mobiletoken
     ) {
         echo 'mobile_access_deined';
         exit;
@@ -88,6 +87,7 @@ if (property_exists($ltimessagehint, 'mobiletokenid') && $ltimessagehint->mobile
         $launchdata->modtype = '';
         $launchdata->legacyjsresize = false;
         $launchdata->ishtmlassign = false;
+        $launchdata->postscript = false;
     }
 } else {
     $user = $USER;
@@ -110,7 +110,7 @@ if (property_exists($ltimessagehint, 'mobiletokenid') && $ltimessagehint->mobile
 }
 
 if ($loginhint !== $user->id) {
-    echo 'access_denied' . $loginhint . ' ' . $user->id . ' ' . $mobiletokenid;
+    echo 'access_denied';
     exit;
 }
 

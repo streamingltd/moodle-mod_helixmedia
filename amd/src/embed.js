@@ -22,7 +22,6 @@
 define(['jquery', 'core/modal', 'core/templates'], function($, Modal, Templates) {
     var module = {};
     module.instances = [];
-    module.first = true;
 
     module.medialinstance = function($, params) {
         var minst = {};

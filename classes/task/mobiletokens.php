@@ -45,6 +45,6 @@ class mobiletokens extends \core\task\scheduled_task {
     public function execute() {
         global $DB;
         $timeago = time() - (30 * 60);
-        $DB->delete_records_select("helixmedia_mobile", "timecreated < " . $timeago);
+        $DB->delete_records_select('helixmedia_mobile', 'timecreated < ?', [$timeago]);
     }
 }

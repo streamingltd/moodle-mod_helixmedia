@@ -33,7 +33,6 @@ require_once($CFG->dirroot . '/mod/helixmedia/locallib.php');
 require_once($CFG->libdir . '/externallib.php');
 
 use context_module;
-use mod_helixmedia_external;
 
 /**
  * Handles requests from MoodleMobile
@@ -70,7 +69,7 @@ class mobile {
 
         $helixmedia->name = format_string($helixmedia->name);
         [$helixmedia->intro, $helixmedia->introformat] =
-            external_format_text($helixmedia->intro, $helixmedia->introformat, $context->id, 'mod_helixmedia', 'intro');
+             \core_external\util::format_text($helixmedia->intro, $helixmedia->introformat, $context, 'mod_helixmedia', 'intro');
 
         $data = [
             'helixmedia' => $helixmedia,
